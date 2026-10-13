@@ -1,0 +1,17 @@
+[Unit]
+Description=Import TACACS+ accounting records into the Zabbix audit log
+After=network-online.target mariadb.service
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+ExecStart=/usr/bin/php /usr/local/libexec/tacacs-audit-collector.php
+StateDirectory=tacacs
+StateDirectoryMode=0750
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/tacacs
