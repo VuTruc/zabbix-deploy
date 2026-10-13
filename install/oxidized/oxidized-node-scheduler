@@ -1,0 +1,125 @@
+#!/bin/bash
+
+set -u
+
+SETTINGS_FILE="/home/oxidized/.config/oxidized/node-settings.json"
+API_BASE="http://127.0.0.1:8888/oxidized/node/next"
+
+if [[ ! -f "$SETTINGS_FILE" ]]; then
+    exit 0
+fi
+
+NOW="$(date +%s)"
+
+while IFS=$'\t' read -r NODE NEXT_AT INTERVAL_DAYS; do
+    [[ -z "$NODE" ]] && continue
+
+    [[ "$NEXT_AT" =~ ^[0-9]+$ ]] || continue
+    [[ "$INTERVAL_DAYS" =~ ^[0-9]+$ ]] || continue
+
+    (( INTERVAL_DAYS >= 1 )) || continue
+    (( NEXT_AT > 0 )) || continue
+    (( NOW >= NEXT_AT )) || continue
+
+    exec 9<>"$SETTINGS_FILE" || continue
+
+    if ! flock -n 9; then
+        exec 9>&-
+        continue
+    fi
+
+    CURRENT_NEXT_AT="$(
+        jq -r \
+            --arg node "$NODE" \
+            '.[$node].next_backup_at // 0 | floor' \
+            "$SETTINGS_FILE" 2>/dev/null
+    )"
+
+    CURRENT_INTERVAL="$(
+        jq -r \
+            --arg node "$NODE" \
+            '.[$node].interval_days // 0' \
+            "$SETTINGS_FILE" 2>/dev/null
+    )"
+
+    flock -u 9
+    exec 9>&-
+
+    [[ "$CURRENT_NEXT_AT" =~ ^[0-9]+$ ]] || continue
+    [[ "$CURRENT_INTERVAL" =~ ^[0-9]+$ ]] || continue
+
+    (( CURRENT_NEXT_AT <= NOW )) || continue
+    (( CURRENT_INTERVAL >= 1 )) || continue
+
+    ENCODED_NODE="$(
+        printf '%s' "$NODE" |
+        jq -sRr @uri
+    )"
+
+    HTTP_CODE="$(
+        curl \
+            --silent \
+            --show-error \
+            --output /dev/null \
+            --write-out '%{http_code}' \
+            --connect-timeout 3 \
+            --max-time 10 \
+            "${API_BASE}/${ENCODED_NODE}.json" \
+        2>/dev/null
+    )"
+
+    if [[ "$HTTP_CODE" =~ ^2[0-9][0-9]$ ]]; then
+        TRIGGER_AT="$(date +%s)"
+        NEW_NEXT_AT=$(( TRIGGER_AT + CURRENT_INTERVAL * 86400 ))
+
+        exec 9<>"$SETTINGS_FILE" || continue
+
+        if flock -n 9; then
+            LATEST_NEXT_AT="$(
+                jq -r \
+                    --arg node "$NODE" \
+                    '.[$node].next_backup_at // 0 | floor' \
+                    "$SETTINGS_FILE"
+            )"
+
+            if [[ "$LATEST_NEXT_AT" == "$CURRENT_NEXT_AT" ]]; then
+                TMP_FILE="${SETTINGS_FILE}.tmp.$$"
+
+                if jq \
+                    --arg node "$NODE" \
+                    --argjson next "$NEW_NEXT_AT" \
+                    '.[$node].next_backup_at = $next' \
+                    "$SETTINGS_FILE" > "$TMP_FILE"
+                then
+                    cat "$TMP_FILE" > "$SETTINGS_FILE"
+                    rm -f "$TMP_FILE"
+
+                    echo "$(
+                        date '+%Y-%m-%d %H:%M:%S'
+                    ) Backup queued: ${NODE}, next=${NEW_NEXT_AT}"
+                else
+                    rm -f "$TMP_FILE"
+                fi
+            fi
+
+            flock -u 9
+        fi
+
+        exec 9>&-
+    else
+        echo "$(
+            date '+%Y-%m-%d %H:%M:%S'
+        ) Backup failed: ${NODE}, HTTP=${HTTP_CODE}"
+    fi
+
+done < <(
+    jq -r '
+        to_entries[]
+        | [
+            .key,
+            (.value.next_backup_at // 0 | floor),
+            (.value.interval_days // 0)
+          ]
+        | @tsv
+    ' "$SETTINGS_FILE" 2>/dev/null
+)
