@@ -1,0 +1,10 @@
+[Unit]
+Description=Oxidized per-node backup scheduler
+After=network-online.target oxidized.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=oxidized
+Group=oxidized
+ExecStart=/usr/local/bin/oxidized-node-scheduler
