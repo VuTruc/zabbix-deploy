@@ -1,1208 +1,306 @@
-# Zabbix Monitoring Deployment
-# Bộ triển khai Zabbix Monitoring
+# Zabbix Deploy — Project Guide for Humans and Claude
+
+> **Repository:** `VuTruc/zabbix-deploy`  
+> **Default branch:** `main`  
+> **Purpose:** Automated deployment and extensions for a Zabbix 7.0 monitoring server on Oracle Linux 9.  
+> **Project status:** Source has been migrated and inspected. A clean, end-to-end installation on the new repository has **not yet been verified**. Treat runtime behavior as unverified until tested.
+
+This README is also the project handoff document for Claude or another developer. Read it first, then inspect the actual scripts before changing behavior. The code is the source of truth whenever this document and implementation differ.
+
+## 1. Project goals
+
+This repository automates a monitoring server and provides Zabbix frontend integrations for:
+
+- Zabbix Server, Agent, frontend, API and MariaDB.
+- Apache/PHP frontend hosting.
+- Centralized network Syslog through rsyslog, with per-source-IP log folders.
+- Log rotation for network logs.
+- Oxidized network-device configuration backups and a Zabbix frontend module.
+- Telegram notifications configured through the Zabbix API.
+- Network Syslog discovery/dashboard module.
+- Optional TACACS+ administration, configuration generation and accounting/audit log viewing.
+
+The intended target is a **fresh Oracle Linux 9 server**. Do not assume the full installer is safe to rerun on a production server: several scripts modify system configuration, services, database objects and Zabbix API objects.
+
+## 2. Installation entry point and order
+
+Run the top-level `install.sh` as root. It currently performs these steps in this exact order:
+
+| Step | Script | Responsibility |
+|---|---|---|
+| 1 | `install/01-system.sh` | OS checks, base packages, hostname, NetworkManager and time service preparation |
+| 2 | `install/02-network.sh` | Optional static network configuration through NetworkManager |
+| 3 | `install/03-mariadb.sh` | MariaDB, Zabbix DB/user, local DB credential file |
+| 4 | `install/04-zabbix.sh` | Zabbix 7.0 repository/packages, DB schema and server/agent configuration |
+| 5 | `install/05-apache-php.sh` | Apache/PHP installation and frontend configuration |
+| 6 | `install/06-rsyslog.sh` | UDP/514 receiver and per-device full/event log files |
+| 7 | `install/07-logrotate.sh` | Rotation policy for `/var/log/network/*/*.log` |
+| 8 | `install/08-oxidized.sh` | Oxidized, service, web proxy, config repository and per-node scheduler |
+| 9 | `install/09-telegram.sh` | Telegram credential setup, API/media type/action configuration |
+| 10 | `install/10-network-syslog.sh` | Zabbix API configuration for Syslog discovery and frontend integration |
+| 11 | `install/11-tacacs.sh` | Deploy TACACS+ Zabbix module/migrations/audit collector when prerequisites exist; otherwise skip |
+
+The entry point disables SELinux (runtime and boot configuration) before running the numbered steps. This is a significant security-impacting behavior. Do not silently expand or further weaken it; discuss whether to replace it with proper SELinux policy before changing it.
+
+The Telegram step is wrapped in a retry loop: if it exits non-zero, the top-level installer repeats that step. The other numbered steps are not wrapped in the same retry loop. The script uses `set -e`, so a failure in a normal step stops the run.
+
+### Basic invocation
+
+On a disposable/test Oracle Linux 9 host with network/package-repository access:
+
+```bash
+git clone https://github.com/VuTruc/zabbix-deploy.git
+cd zabbix-deploy
+sudo bash ./install.sh
+```
+
+The installer expects root. Read the script before running it on a host that already has Zabbix, MariaDB, Apache, Oxidized or TACACS+ installed.
+
+## 3. Expected endpoints and important defaults
+
+- Zabbix frontend: `http://<server-ip>:8000/zabbix/`
+- Local frontend: `http://localhost:8000/zabbix/`
+- Oxidized is configured on local port `8888`, proxied under `/oxidized/` by Apache.
+- Network Syslog listens on UDP `514`.
+- Default Zabbix login printed by the installer: `Admin` / `zabbix`. Change the password immediately and check whether later automation still assumes these credentials.
+
+Do not treat these defaults as secure production settings.
+
+## 4. Source tree map
+
+```text
+.
+├── install.sh
+├── install/
+│   ├── 01-system.sh ... 11-tacacs.sh
+│   ├── oxidized-module/             # Zabbix frontend module for Oxidized
+│   ├── oxidized/                    # Per-node scheduler and systemd units
+│   ├── tacacs-module/               # TACACS+ frontend module
+│   ├── tacacs/
+│   │   ├── schema.sql
+│   │   ├── tacacs-config-generator.php
+│   │   ├── tacacs-audit-collector.php
+│   │   ├── migrate-*.php
+│   │   ├── tests/
+│   │   └── systemd/
+│   └── zabbix/
+│       ├── network-syslog.conf
+│       ├── network-syslog-discovery
+│       └── modules/NetworkSyslog/
+├── backup/pre-network-syslog-dashboard/ # Historical scripts; not the active entry point
+└── secrets/.gitkeep                   # Placeholder only; do not commit real secrets
+```
+
+### Active vs historical code
+
+- `install.sh` is the active orchestrator.
+- The numbered scripts under `install/` are the active install steps.
+- `backup/pre-network-syslog-dashboard/` contains historical snapshots. Do not copy old behavior from these files into the active scripts without comparing intent and current implementation.
+- Frontend modules are copied/deployed by install scripts; editing only the deployed server copy is not a durable source change. Make the source change in this repository and update the installer if required.
+
+## 5. Component notes
 
----
+### 5.1 System and network
 
-## 1. Purpose
-## 1. Mục đích
+- `install/01-system.sh` is intended for Oracle Linux 9 and asks for a hostname.
+- `install/02-network.sh` can configure a static IP, gateway and DNS. It checks whether NetworkManager manages the interface and does not forcibly take over an unmanaged interface.
+- Network changes can interrupt the current remote session. Test from console or a recoverable environment.
 
-This repository provides an automated deployment framework for building a
-centralized monitoring server on a clean Oracle Linux installation.
+### 5.2 MariaDB and Zabbix
 
-Repository này cung cấp bộ triển khai tự động để xây dựng một máy chủ
-monitoring tập trung trên nền Oracle Linux mới.
+- MariaDB credentials are written to `/etc/zabbix/zabbix-db.env`; the database script sets restrictive permissions.
+- Database defaults in the implementation include DB name `zabbix` and DB user `zabbix`.
+- Zabbix package repository is the 7.0 Oracle Linux 9 repository.
+- Zabbix Agent hostname is derived from the system hostname.
+- The Apache/PHP step configures the frontend and port `8000`; inspect its current Apache configuration before changing ports or paths.
 
-The target monitoring platform includes:
+### 5.3 Centralized Syslog and discovery
 
-Nền tảng monitoring bao gồm:
+- `install/06-rsyslog.sh` configures UDP/514 and writes rsyslog configuration under `/etc/rsyslog.d/`.
+- Full logs: `/var/log/network/<source-ip>/syslog.log`.
+- Filtered event logs: `/var/log/network/<source-ip>/events.log`.
+- The Zabbix service account is granted read/traverse access through ACLs where supported by the script.
+- `install/07-logrotate.sh` manages `/etc/logrotate.d/network-syslog`.
+- `install/10-network-syslog.sh` installs the discovery key and config, then uses the Zabbix API to create/update the discovery rule, host group and host prototypes.
+- Discovery script source: `install/zabbix/network-syslog-discovery`.
+- Agent key configuration source: `install/zabbix/network-syslog.conf`.
+- Frontend module: `install/zabbix/modules/NetworkSyslog/`.
 
-- Zabbix Server
-- Zabbix Agent
-- MariaDB
-- Apache
-- PHP
-- Centralized Syslog / rsyslog
-- Logrotate
-- Oxidized
-- Telegram notification
-- Zabbix configuration
+When investigating a missing device in the Syslog UI, trace the whole path: device sends UDP/514 → rsyslog creates/writes the source-IP folder → discovery script emits JSON → Agent key returns JSON → LLD runs on the intended Zabbix host → discovered entities/items appear → frontend module queries the expected data. Do not assume that a folder's existence alone means the Zabbix discovery rule succeeded.
 
-The goal is to allow an administrator to deploy a new monitoring server
-without manually repeating the complete installation process.
+### 5.4 Oxidized
 
-Mục tiêu là cho phép quản trị viên triển khai một monitoring server mới
-mà không phải lặp lại toàn bộ quá trình cài đặt thủ công.
+- Main installer: `install/08-oxidized.sh`.
+- Oxidized configuration directory: `/home/oxidized/.config/oxidized/`.
+- Inventory: `router.db` in that directory.
+- Configuration history repository: `configs/` in that directory.
+- Web service uses local TCP/8888 and is proxied through Apache at `/oxidized/`.
+- The installer includes a compatibility adjustment for Cisco IOS prompts containing `#` in hostnames.
+- Scheduler files are in `install/oxidized/`; the timer invokes the per-node scheduler.
+- Frontend module source: `install/oxidized-module/`, module ID `oxidized`, action `oxidized.nodes`.
 
----
+Do not commit device passwords, SSH secrets or real router inventory credentials. Verify the actual Oxidized model and credential handling before adding a new device type.
 
-## 2. Important Warning
-## 2. Cảnh báo quan trọng
+### 5.5 Telegram
 
-This repository is designed primarily for a NEW Oracle Linux server.
+- Main script: `install/09-telegram.sh`.
+- Telegram credentials are expected in `/etc/zabbix/telegram.env`, including `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`, with mode `0600`.
+- The script also refers to `/etc/zabbix/zabbix-export.env`. Before changing or relying on this feature, verify where that file is created and what variables it must contain. Do not assume it is created by the base installer.
+- The script uses the Zabbix API and downloads the upstream Zabbix 7.0 Telegram media-type template.
+- API credentials, bot tokens and chat IDs are secrets. Never paste their real values into issues, commits or this README.
 
-Repository này chủ yếu được thiết kế cho một máy Oracle Linux MỚI.
+### 5.6 TACACS+
 
-Do NOT run the complete installer on an existing production Zabbix Server
-unless the installer documentation explicitly states that the operation
-is safe.
+TACACS+ is an optional integration, not a prerequisite for the base monitoring server. `install/11-tacacs.sh` skips the deployment if the runtime/configuration prerequisites are not ready. It expects at least:
 
-KHÔNG chạy toàn bộ installer trên Zabbix Server production đang hoạt động
-trừ khi tài liệu của installer xác nhận rõ thao tác đó an toàn.
+- `/usr/sbin/tac_plus`
+- Readable `/etc/tacacs/tacacs-db.conf`
+- `/etc/tac_plus.conf`
+- PHP with PDO and `pdo_mysql`
+
+The script validates the TACACS+ config with `tac_plus -P`, verifies/creates missing database tables using the schema's non-destructive `CREATE TABLE IF NOT EXISTS` statements, runs migrations and PHP tests, deploys the Zabbix module, and enables the audit collector timer when systemd is available. It intentionally does **not** overwrite `/etc/tac_plus.conf`, `/etc/tacacs/tacacs-db.conf`, or force the TACACS+ daemon's service state.
+
+TACACS+ module ID: `tacacs`. Frontend actions include:
 
-Always test changes on a separate server before applying them to production.
+- `tacacs.dashboard`
+- `tacacs.users`
+- `tacacs.devices`
+- `tacacs.policies`
+- `tacacs.assignments`
+- `tacacs.auditlogs`
+- `tacacs.auditlogs.csv`
 
-Luôn kiểm tra thay đổi trên một server riêng trước khi áp dụng vào
-production.
+Key files:
+
+- Schema: `install/tacacs/schema.sql`
+- Config generator: `install/tacacs/tacacs-config-generator.php`
+- Accounting/audit collector: `install/tacacs/tacacs-audit-collector.php`
+- Collector units: `install/tacacs/systemd/`
+- Logrotate config: `install/tacacs/tacacs-audit-logrotate.conf`
+- Migrations: `install/tacacs/migrate-*.php`
+- Tests: `install/tacacs/tests/`
 
----
+Network-device TACACS configuration is intentionally performed manually by the administrator. Do not assume that deploying the server/module automatically configures Cisco, FortiGate or other network devices. Authentication, authorization and accounting must be tested on a lab device before production use.
 
-## 3. Deployment Architecture
-## 3. Kiến trúc triển khai
+## 6. Secrets and safety rules
 
-The deployment process is:
+Never commit any of the following:
 
-Quy trình triển khai:
-
-    Oracle Linux
-         |
-         v
-    Git clone
-         |
-         v
-    ./install.sh
-         |
-         +-- System preparation
-         |
-         +-- MariaDB
-         |
-         +-- Zabbix Server
-         |
-         +-- Zabbix Agent
-         |
-         +-- Apache / PHP
-         |
-         +-- Syslog / rsyslog
-         |
-         +-- Logrotate
-         |
-         +-- Oxidized
-         |
-         +-- Telegram
-         |
-         v
-    Monitoring Server
-
-The installer is modular.
-
-Installer được thiết kế theo module.
-
-Each major component has a separate installation/configuration script.
-
-Mỗi thành phần chính có script cài đặt/cấu hình riêng.
-
----
-
-## 4. Requirements
-## 4. Yêu cầu
-
-The target server should have:
-
-Server đích cần có:
-
-- Oracle Linux
-- Network connectivity
-- DNS or working name resolution
-- Internet access to package repositories
-- Sufficient CPU, RAM and disk space
-- Root or sudo access
-
-The exact resource requirements depend on the number of monitored devices
-and the amount of Syslog data.
-
-Yêu cầu tài nguyên cụ thể phụ thuộc vào số lượng thiết bị được giám sát
-và dung lượng Syslog.
-
----
-
-## 5. Installation Workflow
-## 5. Quy trình cài đặt
-
-The administrator should follow this general sequence:
-
-Quản trị viên thực hiện theo trình tự:
-
-1. Install Oracle Linux.
-2. Configure basic network connectivity.
-3. Obtain access to the GitHub repository.
-4. Clone this repository.
-5. Run the installer.
-6. Enter server-specific information.
-7. Allow the installer to install required packages.
-8. Verify all services.
-9. Access the Zabbix frontend.
-10. Add monitoring hosts separately.
-
-1. Cài Oracle Linux.
-2. Cấu hình kết nối mạng cơ bản.
-3. Có quyền truy cập GitHub repository.
-4. Clone repository.
-5. Chạy installer.
-6. Nhập thông tin riêng của server.
-7. Để installer tự cài các package cần thiết.
-8. Kiểm tra toàn bộ service.
-9. Truy cập giao diện Zabbix.
-10. Thêm các thiết bị monitoring sau.
-
----
-
-## 6. Information Required During Installation
-## 6. Thông tin cần nhập khi cài đặt
-
-The installer must request server-specific information interactively.
-
-Installer phải yêu cầu nhập các thông tin riêng của server.
-
-Typical information includes:
-
-Thông tin thường bao gồm:
-
-- Hostname — Tên máy chủ
-- IP address — Địa chỉ IP
-- Network prefix — Prefix mạng
-- Default gateway — Gateway mặc định
-- DNS server — DNS
-- Linux administrator username — Tài khoản quản trị Linux
-- Linux administrator password — Mật khẩu quản trị Linux
-- MariaDB password — Mật khẩu MariaDB
-- Zabbix database password — Mật khẩu database Zabbix
-- Zabbix administrator password — Mật khẩu quản trị Zabbix
-- Telegram Bot Token — Token Telegram
-- Telegram Chat ID — Chat ID Telegram
-- Oxidized credentials — Thông tin đăng nhập Oxidized khi cần
-
-These values must not be hard-coded in the repository.
-
-Các thông tin này không được hard-code trong repository.
-
----
-
-## 7. Secrets Policy
-## 7. Chính sách bảo mật thông tin
-
-The following information must NEVER be committed to Git:
-
-Các thông tin sau TUYỆT ĐỐI KHÔNG được commit vào Git:
-
-- Passwords
-- Database passwords
-- SNMP community strings
-- SNMPv3 authentication credentials
-- SNMPv3 privacy credentials
-- Telegram Bot Tokens
-- API tokens
-- SSH private keys
-- Other production secrets
-
-Secrets must be entered interactively or stored in local files excluded
-by `.gitignore`.
-
-Secret phải được nhập trực tiếp hoặc lưu trong file local được loại trừ
-bởi `.gitignore`.
-
-The `secrets/` directory is intentionally excluded from Git except for
-`.gitkeep`.
-
-Thư mục `secrets/` được cố ý loại khỏi Git, ngoại trừ file `.gitkeep`.
-
----
-
-## 8. Zabbix
-## 8. Zabbix
-
-The installer will deploy the Zabbix monitoring platform.
-
-Installer sẽ triển khai nền tảng Zabbix monitoring.
-
-Expected components:
-
-Các thành phần dự kiến:
-
-- Zabbix Server
-- Zabbix Agent
-- Zabbix Frontend
-- Zabbix API
-- MariaDB
-- Apache
-- PHP
-
-The installer will configure the database connection and required services.
-
-Installer sẽ cấu hình kết nối database và các service cần thiết.
-
----
-
-## 9. Database
-## 9. Database
-
-MariaDB is used as the Zabbix database.
-
-MariaDB được sử dụng làm database cho Zabbix.
-
-The installer will:
-
-Installer sẽ:
-
-1. Install MariaDB.
-2. Enable MariaDB at boot.
-3. Start MariaDB.
-4. Create the Zabbix database.
-5. Create the Zabbix database user.
-6. Import the Zabbix schema.
-7. Configure Zabbix Server.
-8. Verify database connectivity.
-
----
-
-## 10. Network Configuration
-## 10. Cấu hình mạng
-
-The administrator must provide the network information for the new
-monitoring server.
-
-Quản trị viên phải cung cấp thông tin mạng của monitoring server mới.
-
-Example:
-
-Ví dụ:
-
-    Hostname: zabbix-server
-    IP address: 192.168.18.57
-    Prefix: /24
-    Gateway: 192.168.18.1
-    DNS: 8.8.8.8
-
-The installer should verify:
-
-Installer phải kiểm tra:
-
-- IP address
-- Default route
-- DNS resolution
-- Internet connectivity
-- Repository connectivity
-
----
-
-## 11. Centralized Syslog
-## 11. Syslog tập trung
-
-The monitoring server also acts as a centralized Syslog server.
-
-Monitoring server đồng thời đóng vai trò Syslog server tập trung.
-
-Network devices can send Syslog messages to the monitoring server using
-UDP port 514.
-
-Các thiết bị mạng có thể gửi Syslog đến monitoring server thông qua
-UDP port 514.
-
-The expected architecture is:
-
-Kiến trúc dự kiến:
-
-    Network Device
-         |
-         | UDP 514
-         v
-    rsyslog Server
-         |
-         +-- /var/log/network/<device-ip>/syslog.log
-         |
-         +-- /var/log/network/<device-ip>/events.log
-
-The full `syslog.log` file is retained as the complete log evidence.
-
-File `syslog.log` được giữ lại để lưu toàn bộ bằng chứng log.
-
-The `events.log` file is a filtered log intended for easier investigation
-of important device events.
-
-File `events.log` là log được lọc nhằm hỗ trợ việc kiểm tra các sự kiện
-quan trọng của thiết bị.
-
----
-
-## 12. Syslog Log Types
-## 12. Các loại Syslog
-
-The deployment supports two main log files per network device.
-
-Hệ thống hỗ trợ hai file log chính cho mỗi thiết bị mạng.
-
-### Full Syslog
-
-    /var/log/network/<device-ip>/syslog.log
-
-This file contains the complete Syslog stream received from the device.
-
-File này chứa toàn bộ Syslog nhận được từ thiết bị.
-
-It should normally be preserved for troubleshooting and forensic analysis.
-
-Thông thường file này cần được giữ lại để troubleshooting và phân tích
-sự cố.
-
-### Event Syslog
-
-    /var/log/network/<device-ip>/events.log
-
-This file contains filtered messages considered useful for event analysis.
-
-File này chứa các message được lọc để thuận tiện phân tích sự kiện.
-
-The initial implementation includes filtering for messages containing:
-
-    type="event"
-
-This filter is primarily based on the current FortiGate Syslog format.
-
-Bộ lọc này chủ yếu dựa trên format Syslog hiện tại của FortiGate.
-
-Vendor-specific filters may be required for Cisco, DrayTek, MikroTik or
-other network devices.
-
-Các thiết bị Cisco, DrayTek, MikroTik hoặc vendor khác có thể cần bộ lọc
-riêng.
-
----
-
-## 13. Syslog and Zabbix
-## 13. Syslog và Zabbix
-
-Zabbix and Syslog have different roles.
-
-Zabbix và Syslog có vai trò khác nhau.
-
-Zabbix is primarily responsible for:
-
-Zabbix chủ yếu chịu trách nhiệm:
-
-- Availability
-- Ping
-- SNMP monitoring
-- CPU
-- Memory
-- Interface traffic
-- Interface errors
-- Device health
-- Alerts
-
-Syslog is primarily responsible for:
-
-Syslog chủ yếu chịu trách nhiệm:
-
-- Event evidence
-- Interface state changes
-- Authentication events
-- Configuration changes
-- Security events
-- System messages
-- Root-cause investigation
-
-The recommended workflow is:
-
-Quy trình khuyến nghị:
-
-    Device failure
-         |
-         +-- Zabbix detects availability problem
-         |
-         +-- SNMP shows device/interface status
-         |
-         +-- Syslog provides event evidence
-         |
-         v
-    Troubleshooting
-
-Syslog should not automatically create a Zabbix trigger for every message.
-
-Không nên tự động tạo Zabbix trigger cho mọi Syslog message.
-
----
-
-## 14. Syslog ACL
-## 14. ACL cho Syslog
-
-The Zabbix service account may need read access to centralized Syslog files.
-
-Tài khoản service `zabbix` có thể cần quyền đọc các file Syslog tập trung.
-
-The deployment should configure appropriate filesystem permissions or ACLs.
-
-Installer phải cấu hình permission hoặc ACL phù hợp.
-
-Example target:
-
-    /var/log/network/
-
-The exact ACL implementation may depend on the Oracle Linux environment.
-
-Cách triển khai ACL cụ thể có thể phụ thuộc vào môi trường Oracle Linux.
-
-The goal is to allow Zabbix to read required log files without giving
-unnecessary write or administrative permissions.
-
-Mục tiêu là cho phép Zabbix đọc log cần thiết mà không cấp quyền ghi hoặc
-quyền quản trị không cần thiết.
-
----
-
-## 15. Logrotate
-## 15. Logrotate
-
-Network Syslog data can grow quickly.
-
-Dữ liệu Syslog mạng có thể tăng rất nhanh.
-
-The deployment therefore configures logrotate for network logs.
-
-Installer sẽ cấu hình logrotate cho các log mạng.
-
-Expected policy:
-
-Chính sách dự kiến:
-
-    /var/log/network/*/*.log {
-        daily
-        rotate 90
-        missingok
-        notifempty
-        compress
-        delaycompress
-        copytruncate
-    }
-
-The policy provides approximately 90 rotation periods when the logs are
-rotated daily.
-
-Chính sách này cung cấp khoảng 90 kỳ rotation khi log được rotate hàng ngày.
-
-The exact retention period may be adjusted later.
-
-Thời gian lưu trữ có thể được điều chỉnh sau.
-
----
-
-## 16. Automatic New Device Log Directory
-## 16. Tự động tạo thư mục log cho thiết bị mới
-
-The rsyslog configuration should dynamically create directories based on
-the source IP address.
-
-Cấu hình rsyslog sẽ tự động tạo thư mục dựa trên IP nguồn.
-
-Example:
-
-    /var/log/network/192.168.18.1/syslog.log
-
-If a new network device sends Syslog, its directory should be created
-automatically.
-
-Khi một thiết bị mạng mới gửi Syslog, thư mục tương ứng sẽ được tạo
-tự động.
-
-The wildcard logrotate configuration then applies to the new device.
-
-Cấu hình logrotate wildcard sẽ tự động áp dụng cho thiết bị mới.
-
-No manual logrotate entry should be required for every new device.
-
-Không cần tạo riêng cấu hình logrotate cho từng thiết bị mới.
-
----
-
-## 17. Oxidized
-## 17. Oxidized
-
-Oxidized is used for automated network device configuration backup.
-
-Oxidized được sử dụng để tự động backup cấu hình thiết bị mạng.
-
-The deployment should provide:
-
-Installer cần cung cấp:
-
-- Oxidized installation
-- Service configuration
-- Repository/storage configuration
-- Device inventory configuration
-- Credential configuration
-- Scheduled polling
-- Configuration history
-
-Production credentials must not be stored in Git.
-
-Thông tin đăng nhập production không được lưu trong Git.
-
-Credentials should be entered during deployment or supplied through a local
-secret configuration.
-
-Thông tin đăng nhập phải được nhập khi triển khai hoặc cung cấp thông qua
-file secret local.
-
----
-
-## 18. Telegram Notification
-## 18. Thông báo Telegram
-
-Telegram is used as one of the notification channels for Zabbix.
-
-Telegram được sử dụng làm một trong các kênh thông báo của Zabbix.
-
-The installer should request:
-
-Installer phải yêu cầu:
-
-- Telegram Bot Token
-- Telegram Chat ID
-
-These values must never be hard-coded into public configuration files.
-
-Các giá trị này tuyệt đối không được hard-code trong file cấu hình public.
-
-The installer should preferably write the values into a local secret file
-with restricted permissions.
-
-Installer nên lưu các giá trị vào file secret local với permission hạn chế.
-
-Example:
-
-    chmod 600 /etc/zabbix/telegram.env
-
-The bot token must be treated as a secret.
-
-Bot token phải được xem là thông tin bí mật.
-
-If a production bot token is ever exposed publicly, it should be revoked
-and replaced.
-
-Nếu production bot token bị lộ công khai, cần revoke và tạo token mới.
-
----
-
-## 19. Zabbix Hosts
-## 19. Zabbix Hosts
-
-Network devices should NOT automatically be created during the base
-monitoring server installation.
-
-Các thiết bị mạng KHÔNG nên được tự động tạo trong quá trình cài
-monitoring server cơ bản.
-
-The base installation only prepares the Zabbix platform.
-
-Cài đặt cơ bản chỉ chuẩn bị nền tảng Zabbix.
-
-Network devices are added separately.
-
-Thiết bị mạng được thêm sau.
-
-This prevents the installer from creating incorrect or unwanted hosts.
-
-Điều này tránh việc installer tạo host sai hoặc không mong muốn.
-
----
-
-## 20. SNMP
-## 20. SNMP
-
-SNMP is the preferred mechanism for continuous monitoring of network
-devices.
-
-SNMP là cơ chế ưu tiên để giám sát liên tục các thiết bị mạng.
-
-Typical monitoring includes:
-
-Thông thường sẽ giám sát:
-
-- Device availability
-- CPU
-- Memory
-- Interface status
-- Interface traffic
-- Interface errors
-- Packet counters
-- Device uptime
-- Hardware sensors when supported
-
-SNMP community strings must not be stored in GitHub.
-
-SNMP community string không được lưu trong GitHub.
-
-SNMPv3 credentials must also be treated as secrets.
-
-Thông tin xác thực SNMPv3 cũng phải được xem là secret.
-
----
-
-## 21. Zabbix Syslog Monitoring
-## 21. Giám sát Syslog bằng Zabbix
-
-Zabbix can read selected centralized Syslog files using log monitoring
-items.
-
-Zabbix có thể đọc các file Syslog tập trung bằng log monitoring item.
-
-Example:
-
-    logrt[] 
-
-A typical design is to create the Syslog Server as a Zabbix host.
-
-Một thiết kế điển hình là tạo Syslog Server thành một Zabbix host.
-
-The Zabbix Agent on that host can provide access to the required log files.
-
-Zabbix Agent trên host đó có thể cung cấp quyền truy cập đến các file log
-cần thiết.
-
-Example:
-
-    /var/log/network/192.168.18.1/events.log
-
-The exact Zabbix item and trigger configuration should be created
-separately from the base installer.
-
-Item và trigger cụ thể nên được tạo riêng với installer cơ bản.
-
----
-
-## 22. Installation Stages
-## 22. Các giai đoạn cài đặt
-
-The installer should execute the following stages:
-
-Installer nên thực hiện các giai đoạn:
-
-1. Pre-installation checks
-2. System preparation
-3. Hostname configuration
-4. Network configuration
-5. Repository configuration
-6. Package installation
-7. MariaDB installation
-8. Zabbix installation
-9. Apache installation
-10. PHP installation
-11. Zabbix database configuration
-12. Zabbix Server configuration
-13. Zabbix Agent configuration
-14. Syslog configuration
-15. ACL configuration
-16. Logrotate configuration
-17. Oxidized installation
-18. Telegram configuration
-19. Service enable/start
-20. Final verification
-
----
-
-## 23. Pre-installation Checks
-## 23. Kiểm tra trước khi cài đặt
-
-The installer should verify:
-
-Installer phải kiểm tra:
-
-- Running Oracle Linux version
-- Root/sudo privileges
-- Internet connectivity
-- DNS resolution
-- Available disk space
-- Available memory
-- Required ports
-- Existing conflicting services
-- Existing Zabbix installation
-
-The installer should stop or warn when it detects an existing production
-installation.
-
-Installer phải dừng hoặc cảnh báo khi phát hiện hệ thống production
-đang tồn tại.
-
----
-
-## 24. Installation Verification
-## 24. Kiểm tra sau cài đặt
-
-After installation, the administrator should verify:
-
-Sau khi cài đặt, quản trị viên phải kiểm tra:
-
-    systemctl status mariadb
-    systemctl status zabbix-server
-    systemctl status zabbix-agent
-    systemctl status httpd
-    systemctl status rsyslog
-    systemctl status oxidized
-
-The administrator should also verify:
-
-Ngoài ra cần kiểm tra:
-
-- Database connectivity
-- Zabbix Server log
-- Apache status
-- PHP functionality
-- Zabbix frontend
-- UDP 514 Syslog listener
-- Telegram notification
-- Oxidized service
-- Logrotate configuration
-
----
-
-## 25. Repository Structure
-## 25. Cấu trúc repository
-
-The repository is organized into independent modules.
-
-Repository được tổ chức thành các module độc lập.
-
-    zabbix-monitoring-deploy/
-    |
-    +-- install/
-    |   +-- 01-system.sh
-    |   +-- 02-network.sh
-    |   +-- 03-mariadb.sh
-    |   +-- 04-zabbix.sh
-    |   +-- 05-apache-php.sh
-    |   +-- 06-rsyslog.sh
-    |   +-- 07-logrotate.sh
-    |   +-- 08-oxidized.sh
-    |   +-- 09-telegram.sh
-    |
-    +-- config/
-    |   +-- zabbix/
-    |   +-- rsyslog/
-    |   +-- logrotate/
-    |   +-- oxidized/
-    |   +-- telegram/
-    |
-    +-- scripts/
-    |
-    +-- templates/
-    |
-    +-- secrets/
-    |   +-- .gitkeep
-    |
-    +-- install.sh
-    +-- README.md
-    +-- .gitignore
-
-The exact module names may change during development.
-
-Tên module cụ thể có thể thay đổi trong quá trình phát triển.
-
----
-
-## 26. Main Installer
-## 26. Installer chính
-
-The root installer should remain small.
-
-Installer chính ở thư mục root nên được giữ đơn giản.
-
-Example workflow:
-
-Quy trình ví dụ:
-
-    ./install.sh
-
-The main installer should:
-
-Installer chính sẽ:
-
-1. Check privileges.
-2. Collect input.
-3. Validate input.
-4. Store temporary runtime values securely.
-5. Execute modules in order.
-6. Stop on critical failure.
-7. Report successful stages.
-8. Run final verification.
-
-Each module should return a meaningful exit status.
-
-Mỗi module phải trả về exit status rõ ràng.
-
----
-
-## 27. Configuration Templates
-## 27. Template cấu hình
-
-Production configuration should be converted into reusable templates.
-
-Cấu hình production cần được chuyển thành template có thể tái sử dụng.
-
-Templates must not contain:
-
-Template không được chứa:
-
-- Production passwords
-- Production tokens
-- Private keys
-- SNMP secrets
-- API tokens
-- Personal credentials
-
-Values should be injected during installation.
-
-Giá trị cụ thể sẽ được đưa vào trong quá trình cài đặt.
-
----
-
-## 28. Git Workflow
-## 28. Quy trình Git
-
-The repository uses Git for version control.
-
-Repository sử dụng Git để quản lý phiên bản.
-
-Recommended workflow:
-
-Quy trình khuyến nghị:
-
-    git status
-    git add .
-    git commit -m "Description"
-    git push
-
-Before every commit:
-
-Trước mỗi commit:
-
-1. Check `.gitignore`.
-2. Check for passwords.
-3. Check for tokens.
-4. Check for SNMP credentials.
-5. Check for private keys.
-6. Review changed files.
-
-Never commit production secrets.
-
-Không bao giờ commit production secret.
-
----
-
-## 29. Backup and Restore
-## 29. Backup và Restore
-
-The deployment project should support backup of important configuration.
-
-Project triển khai nên hỗ trợ backup các cấu hình quan trọng.
-
-Potential backup targets:
-
-Các thành phần cần backup:
-
-- Zabbix database
-- Zabbix configuration
-- rsyslog configuration
-- Logrotate configuration
-- Oxidized configuration
-- Oxidized configuration repository
-- Telegram configuration
-- Local deployment secrets
-
-Secrets should be backed up separately and securely.
-
-Secret phải được backup riêng và bảo vệ an toàn.
-
----
-
-## 30. Adding a New Network Device
-## 30. Thêm thiết bị mạng mới
-
-The expected workflow is:
-
-Quy trình dự kiến:
-
-1. Configure the network device hostname.
-2. Configure management IP.
-3. Configure SNMP.
-4. Configure Syslog destination.
-5. Configure Oxidized credentials if required.
-6. Send Syslog to the monitoring server.
-7. Verify the Syslog directory is created.
-8. Create the Zabbix host.
-9. Configure SNMP interfaces/items.
-10. Configure triggers.
-11. Verify Telegram notifications.
-
-Example Syslog destination:
-
-    Monitoring Server: 192.168.18.57
-    Port: UDP 514
-
-After the first Syslog message is received, rsyslog should create:
-
-    /var/log/network/<device-ip>/syslog.log
-
-The event log may also be created automatically.
-
-File events.log cũng có thể được tạo tự động.
-
----
-
-## 31. Troubleshooting
-## 31. Xử lý sự cố
-
-### Zabbix Server does not start
-
-Check:
-
-    systemctl status zabbix-server
-    journalctl -u zabbix-server
-    tail -100 /var/log/zabbix/zabbix_server.log
-
-Verify:
-
-- Database hostname
-- Database name
-- Database username
-- Database password
-- Database service
-- Schema import
-
-### MariaDB does not start
-
-Check:
-
-    systemctl status mariadb
-    journalctl -u mariadb
-
-Verify:
-
-- Disk space
-- Existing MariaDB process
-- Database directory
-- Configuration files
-
-### Apache does not start
-
-Check:
-
-    systemctl status httpd
-    journalctl -u httpd
-
-Verify:
-
-- Port conflict
-- PHP configuration
-- Apache configuration
-
-### Syslog is not received
-
-Check:
-
-    ss -lunp | grep 514
-
-Then inspect:
-
-    /var/log/network/
-
-Verify:
-
-- UDP 514 firewall rule
-- rsyslog service
-- Network device Syslog destination
-- Network connectivity
-
-### Telegram does not send
-
-Verify:
-
-- Bot token
-- Chat ID
-- Internet connectivity
-- Zabbix media type
-- Zabbix action
-- Zabbix event permissions
-
-Do not print production bot tokens during troubleshooting.
-
-Không hiển thị production bot token khi troubleshooting.
-
----
-
-## 32. Security Policy
-## 32. Chính sách bảo mật
-
-The deployment project must follow the principle of least privilege.
-
-Project phải tuân theo nguyên tắc cấp quyền tối thiểu.
-
-The installer should:
-
-Installer nên:
-
-- Restrict secret file permissions
-- Avoid passwords in command history where possible
-- Avoid printing secrets
-- Avoid committing secrets
-- Validate user input
-- Avoid unnecessary open ports
-- Enable only required services
-- Use secure credentials
-- Document privileged operations
-
----
-
-## 33. Development Policy
-## 33. Chính sách phát triển
-
-All installation modules should be:
-
-Các module cài đặt phải:
-
-- Idempotent where practical
-- Clearly documented
-- Independently testable
-- Safe to re-run where possible
-- Fail clearly on critical errors
-- Free of production secrets
-
-Scripts should avoid destructive operations unless explicitly documented.
-
-Script không được thực hiện thao tác phá hủy nếu chưa được ghi rõ trong
-documentation.
-
----
-
-## 34. Current Project Status
-## 34. Trạng thái hiện tại
-
-The repository is currently being rebuilt as a clean deployment project.
-
-Repository hiện đang được xây dựng lại thành một project deployment sạch.
-
-The production Zabbix server is used as the configuration reference.
-
-Zabbix production được sử dụng làm nguồn tham khảo cấu hình.
-
-Production secrets are intentionally excluded.
-
-Production secrets được cố ý loại khỏi repository.
-
-The initial development priority is:
-
-Ưu tiên phát triển ban đầu:
-
-1. Repository structure
-2. README
-3. Git ignore policy
-4. Installation framework
-5. System preparation
-6. MariaDB
-7. Zabbix
-8. Apache/PHP
-9. Centralized Syslog
-10. Logrotate
-11. Oxidized
-12. Telegram
-13. Verification
-14. Backup/restore
-
----
-
-## 35. Final Goal
-## 35. Mục tiêu cuối cùng
-
-The final goal is to allow a new Oracle Linux server to be deployed with a
-simple workflow:
-
-Mục tiêu cuối cùng là cho phép triển khai một Oracle Linux server mới bằng
-quy trình đơn giản:
-
-    git clone git@github.com:VuTruc/zabbix-monitoring-deploy.git
-
-    cd zabbix-monitoring-deploy
-
-    ./install.sh
-
-The installer should collect the required server-specific information and
-then automatically build the monitoring platform.
-
-Installer sẽ hỏi các thông tin cần thiết của server và sau đó tự động xây
-dựng toàn bộ nền tảng monitoring.
-
-After installation, network devices can be added separately.
-
-Sau khi cài đặt, các thiết bị mạng sẽ được thêm riêng.
-
-The deployment project is intended to make rebuilding the monitoring server
-repeatable, documented and maintainable.
-
-Project này nhằm biến việc dựng lại monitoring server thành một quy trình
-có thể lặp lại, có tài liệu và dễ bảo trì.
-
----
-
-## 36. TACACS+ Integration
-## 36. Tích hợp TACACS+
-
-The deployment workflow includes an optional TACACS+ integration stage through
-`install/11-tacacs.sh`. The stage is skipped safely when the TACACS+ daemon or
-required configuration files are not present.
-
-Quy trình triển khai có bước tích hợp TACACS+ tùy chọn tại
-`install/11-tacacs.sh`. Bước này tự bỏ qua an toàn nếu daemon TACACS+ hoặc
-các file cấu hình bắt buộc chưa tồn tại.
-
-The integration includes:
-
-Tích hợp bao gồm:
-
-- A Zabbix frontend module for TACACS+ users, devices, policies and assignments.
-- A MariaDB schema for TACACS+ data and audit records.
-- A PHP configuration generator source file.
-- Validation of the existing TACACS+ daemon configuration.
-
-The installer backs up an existing Zabbix TACACS+ module before updating its
-source files. It does not automatically run the configuration generator and
-does not overwrite `/etc/tac_plus.conf` or `/etc/tacacs/tacacs-db.conf`.
-Missing database tables are created only with `CREATE TABLE IF NOT EXISTS`;
-existing records are not intentionally dropped or reset.
-
-Cài đặt sẽ sao lưu module TACACS+ hiện có trước khi cập nhật source. Installer
-không tự chạy trình tạo cấu hình và không ghi đè
-`/etc/tac_plus.conf` hoặc `/etc/tacacs/tacacs-db.conf`. Các bảng còn thiếu
-chỉ được tạo bằng `CREATE TABLE IF NOT EXISTS`; dữ liệu hiện có không bị
-chủ động xóa hoặc khởi tạo lại.
-
-After deployment, verify the TACACS+ module in the Zabbix frontend and test
-authentication with a non-production account and device before using it in
-production. Enabling the daemon at boot is a separate administrative action:
-
-Sau khi triển khai, hãy kiểm tra module trong giao diện Zabbix và thử xác thực
-bằng tài khoản cùng thiết bị thử nghiệm trước khi sử dụng trong môi trường
-production. Bật daemon tự khởi động là thao tác quản trị riêng:
-
-`systemctl enable tac_plus`
-
-## TACACS+ Assignment v2 and audit automation
-
-The Assignment model stores one access mode per User–Device pair:
-
-- `access_mode='all'` with `policy_id=NULL` means **Allow All**. It is an Assignment mode, not a Policy row.
-- `access_mode='policy'` with a non-NULL `policy_id` references an enabled Policy.
-- The installer runs `install/tacacs/migrate-assignments-v2.php`. Migration creates a pre-migration table backup and stops before schema changes if a legacy User–Device pair has multiple Policy assignments; an administrator must resolve duplicates explicitly.
-- The generator validates candidate config with `tac_plus -C <temporary-file> -P` before atomically replacing `/etc/tac_plus.conf`. It does not restart or reload the running daemon.
-- The installer enables `tacacs-audit-collector.timer` when systemd is available. Audit rows still require device accounting to be configured on each network device.
-
-**Device authorization limitation:** per-command Policy rules require the NAS to send command-authorization requests. Cisco Business 350/SG350 documentation describes authorization at login and accounting for login sessions; the generic command-rule generator cannot guarantee arbitrary per-command enforcement on that platform. FortiGate authorization requires Fortinet attributes such as `memberof` and `admin_prof`; mapping to FortiGate administrator profiles is device-specific and must be validated before claiming enforcement. Test target-device behavior before merging to production.
-
-### tac_plus command-rule semantics
-
-In `tac_plus`, `cmd = show` identifies the literal command name; the regex entries beneath it match command arguments. A stanza such as `cmd = .*` is not a wildcard for all command names. The generator therefore sets `default service = permit` for Allow All and `default service = deny` for Policy mode, explicitly authorizes the management EXEC service, and emits command-specific Policy blocks only. The EXEC block uses `default attribute = permit` so NAS-supplied service attributes can pass through without hard-coding vendor-specific privilege attributes. Unknown command names default to deny under Policy mode. This config-level behavior still depends on the network device requesting command authorization.
+- Linux, database, Zabbix, TACACS+, Oxidized or device passwords.
+- Telegram bot tokens or Zabbix API tokens.
+- SNMP community strings or SNMPv3 credentials.
+- SSH private keys, private configuration backups or production router inventory.
+- Database dumps, production Syslog, accounting logs or other sensitive exports.
+
+Keep local secret files outside the repository or ensure they are excluded by `.gitignore`. The tracked `secrets/.gitkeep` is only a directory placeholder.
+
+Before changing installation behavior:
+1. Identify every file and external system affected.
+2. Check idempotency: running a step twice should not duplicate configuration or damage existing data.
+3. Back up the target config/database before destructive or schema-changing operations.
+4. Avoid printing secret values to terminal logs.
+5. Prefer narrow changes over rewriting a whole installer module.
+6. Never silently disable security controls or change network interfaces.
+7. State clearly whether a check was static or was run on a real Oracle Linux host.
+
+## 7. Validation and test commands
+
+Run static checks from the repository root before committing:
+
+```bash
+# Shell syntax
+find . -type f -name '*.sh' -print0 | xargs -0 -r -n1 bash -n
+find . -type f -path '*/oxidized/oxidized-node-scheduler' -o -path '*/zabbix/network-syslog-discovery' -print
+
+# PHP syntax (requires PHP)
+find install -type f -name '*.php' -print0 | xargs -0 -r -n1 php -l
+
+# TACACS+ contract/parser tests (requires PHP and the expected test environment)
+php install/tacacs/tests/tacacs-assignment-schema-test.php
+php install/tacacs/tests/tacacs-audit-collector-test.php
+
+# Inspect changes
+git diff --check
+git status --short
+git diff -- README.md
+```
+
+The second `find` command above is only a quick inventory helper; run `bash -n` explicitly on shell scripts and inspect the output of all checks. Static syntax checks do **not** prove that package installation, SQL migrations, API permissions, systemd units, firewall changes, device authentication or UI workflows work.
+
+### Suggested end-to-end test plan
+
+Use a disposable Oracle Linux 9 VM with a snapshot and working Internet/DNS:
+
+1. Start from a clean VM and record OS/network state.
+2. Clone this repository and inspect `install.sh` and every step first.
+3. Run the installer interactively; capture logs without exposing secrets.
+4. Verify MariaDB, `zabbix-server`, `zabbix-agent`, `httpd`, `rsyslog`, Oxidized and any configured timers.
+5. Open `http://<server-ip>:8000/zabbix/`, change the default Admin password and confirm API access.
+6. Send a test Syslog message from a lab source; verify the per-IP folder, both log files, ACL and logrotate configuration.
+7. Confirm the discovery key returns valid JSON and LLD creates the expected objects; open the Network Syslog frontend module.
+8. Test Oxidized against a lab device and verify a configuration backup is committed.
+9. Test Telegram problem/recovery notifications, including HTML-special characters and correct links.
+10. If TACACS+ is configured, validate the daemon config, test authentication/authorization on a lab device, generate accounting records, and confirm the audit UI/filter/export behavior.
+11. Re-run only individual steps that are documented as safe to rerun. Check for duplicate API objects, duplicate config blocks and unexpected service restarts.
+12. Document every failure and fix it before calling the full deployment successful.
+
+## 8. Known verification gaps / first things to investigate
+
+These are investigation items, not claims that every one is a confirmed runtime defect:
+
+1. **Clean-install verification:** No end-to-end install has yet been confirmed for this repository's `main`.
+2. **Telegram export environment:** `install/09-telegram.sh` references `/etc/zabbix/zabbix-export.env`; find its creator/contract and confirm it exists on a clean install.
+3. **Default Zabbix credentials:** `install/10-network-syslog.sh` defaults to `Admin` / `zabbix`. Check behavior if the password was changed in the previous step or the environment already has another admin credential.
+4. **SELinux:** `install.sh` disables SELinux. Decide whether this is acceptable for the intended deployment or should be replaced by correct policies/labels.
+5. **Network step recovery:** Static-IP changes may sever SSH access; validate the prompt, connection selection and rollback/recovery path.
+6. **Installer idempotency:** Verify reruns do not append duplicate Apache/PHP/Zabbix/rsyslog configuration or duplicate API objects.
+7. **TACACS+ separation:** Verify the optional TACACS+ installer remains a no-op when prerequisites are absent and does not unintentionally change an existing TACACS+ service/config.
+8. **Module compatibility:** Validate frontend module API/action/view behavior against the exact installed Zabbix 7.0 patch release, not only PHP syntax.
+9. **Public repository review:** Re-scan tracked files and commit history for secrets before publishing changes.
+
+When a gap is resolved, update this section with the tested environment, command or procedure, observed result, and date. Do not mark a feature “tested” based only on reading its source.
+
+## 9. Git workflow
+
+Use a focused branch and small commits:
+
+```bash
+git checkout -b docs/readme-claude-handoff
+# edit README.md
+git diff --check
+git diff -- README.md
+git add README.md
+git commit -m "docs: rewrite README for project handoff"
+git push -u origin docs/readme-claude-handoff
+```
+
+Follow the repository's agreed review/push process before merging to `main`. Do not overwrite another developer's changes or force-push shared branches.
+
+## 10. Instructions for Claude (project continuation contract)
+
+When Claude continues this project:
+
+1. **Establish state first.** Confirm repository, branch, commit, dirty working tree and current OS/runtime context. The active repository is `VuTruc/zabbix-deploy`; do not confuse it with the legacy `VuTruc/zabbix-monitoring-deploy`.
+2. **Read implementation before editing.** Start with this README, `install.sh`, the relevant numbered installer, then the exact module/controller/view/schema/test files involved.
+3. **Do not infer source from memory or an old branch.** Check the current branch contents. If prior discussion conflicts with current code, current code wins unless the user explicitly asks to restore earlier behavior.
+4. **Keep the source of truth in Git.** Edit repository files, not only deployed copies under `/etc` or `/usr/share/zabbix/modules`.
+5. **Preserve working features.** Make minimal changes; show the affected files and explain behavior changes.
+6. **For TACACS+ bugs, trace the full path:** frontend view/form → JS validation/submission → action/controller input validation → DB schema and migration → generated `/etc/tac_plus.conf` → `tac_plus -P` → daemon behavior → accounting collector → audit UI/export. Test policy matching across device types. The current design avoids a single hard-coded privilege level because it must support multiple device vendors; do not reintroduce a universal privilege-level assumption without an explicit design decision.
+7. **Audit logging is not proof of every CLI command.** Distinguish TACACS+ accounting records actually received from parsed/displayed fields. Validate what each device sends and clearly identify unavailable data.
+8. **For Syslog bugs, follow the end-to-end data path** described above rather than changing only the dashboard.
+9. **Run tests and report results honestly.** Separate static checks, unit/contract tests and real VM/device tests. Include exact commands and failures. Never claim end-to-end success if only syntax or source review was done.
+10. **Protect secrets and production state.** Redact tokens/passwords from output; do not make live network-device configuration changes unless explicitly requested.
+11. **At handoff, report:** commit/branch, files changed, implementation summary, tests run/results, known limitations and the next concrete action.
+
+## 11. Definition of done
+
+A change is ready for review when:
+- The implementation matches the stated behavior.
+- Relevant shell/PHP syntax and focused tests pass.
+- Migration/backward-compatibility behavior is understood.
+- Failure paths and permissions are checked.
+- No secrets or production data are committed.
+- The README or other docs are updated where behavior or operations changed.
+- The report distinguishes what was verified statically from what was tested live.
+
+A full deployment is ready to call successful only after the clean-VM end-to-end test plan has passed and the result is recorded.
