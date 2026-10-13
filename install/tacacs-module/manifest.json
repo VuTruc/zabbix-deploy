@@ -1,0 +1,39 @@
+{
+    "manifest_version": 2.0,
+    "id": "tacacs",
+    "name": "TACACS+",
+    "version": "1.0",
+    "namespace": "Tacacs",
+    "author": "VuTruc",
+    "description": "TACACS+ authentication, authorization and accounting",
+    "actions": {
+        "tacacs.dashboard": {
+            "class": "TacacsDashboard",
+            "view": "tacacs.dashboard"
+        },
+        "tacacs.users": {
+            "class": "TacacsUsers",
+            "view": "tacacs.users"
+        },
+        "tacacs.devices": {
+            "class": "TacacsDevices",
+            "view": "tacacs.devices"
+        },
+        "tacacs.policies": {
+            "class": "TacacsPolicies",
+            "view": "tacacs.policies"
+        },
+        "tacacs.assignments": {
+            "class": "TacacsAssignments",
+            "view": "tacacs.assignments"
+        },
+        "tacacs.auditlogs": {
+            "class": "TacacsAuditLogs",
+            "view": "tacacs.auditlogs"
+        },
+        "tacacs.auditlogs.csv": {
+            "class": "TacacsAuditLogs",
+            "view": "tacacs.auditlogs.csv"
+        }
+    }
+}
