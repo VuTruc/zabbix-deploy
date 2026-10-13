@@ -1,0 +1,15 @@
+{
+    "manifest_version": 2.0,
+    "id": "oxidized",
+    "name": "Oxidized",
+    "version": "1.2",
+    "namespace": "Oxidized",
+    "author": "VuTruc",
+    "description": "Oxidized network configuration backup",
+    "actions": {
+        "oxidized.nodes": {
+            "class": "OxidizedNodes",
+            "view": "oxidized.nodes"
+        }
+    }
+}
