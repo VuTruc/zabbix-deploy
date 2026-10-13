@@ -1,0 +1,19 @@
+{
+    "manifest_version": 2.0,
+    "id": "networksyslog",
+    "name": "Network Syslog",
+    "version": "1.0",
+    "namespace": "NetworkSyslog",
+    "author": "VuTruc",
+    "description": "Network device syslog viewer",
+    "actions": {
+        "network.syslog": {
+            "class": "NetworkSyslog",
+            "view": "network.syslog"
+        },
+        "network.syslog.download": {
+            "class": "NetworkSyslogDownload",
+            "view": null
+        }
+    }
+}
