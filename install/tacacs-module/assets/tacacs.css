@@ -1,0 +1,1769 @@
+.tacacs-dashboard {
+    width: 100%;
+}
+
+.tacacs-dashboard h2 {
+    margin-top: 28px;
+    margin-bottom: 16px;
+    font-size: 20px;
+}
+
+.tacacs-stats {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 30px;
+}
+
+.tacacs-dashboard .tacacs-stat {
+    min-width: 0;
+    min-height: 125px;
+    padding: 16px 14px;
+}
+
+.tacacs-dashboard .tacacs-stat-title {
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+
+.tacacs-dashboard .tacacs-stat-value {
+    font-size: 32px;
+    margin-bottom: 8px;
+}
+
+.tacacs-dashboard .tacacs-stat-link {
+    font-size: 12px;
+}
+
+.tacacs-stat {
+    display: block;
+    box-sizing: border-box;
+    min-height: 150px;
+    padding: 22px 24px;
+    border: 1px solid #d9dce1;
+    border-radius: 8px;
+    background: #ffffff;
+    text-decoration: none;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.tacacs-stat:hover {
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+}
+
+.tacacs-stat-title {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.4;
+    margin-bottom: 10px;
+}
+
+.tacacs-stat-value {
+    font-size: 38px;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 12px;
+}
+
+.tacacs-stat-link {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.tacacs-device-type-help {
+    margin-top: 4px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font-size: 11px;
+    line-height: 1.5;
+    font-style: italic;
+    white-space: nowrap;
+}
+
+.tacacs-device-type-help strong {
+    display: block;
+    margin-bottom: 2px;
+    font-weight: 600;
+    color: #52565c;
+}
+
+#page-title-general {
+    font-weight: 700 !important;
+}
+
+@media (max-width: 1000px) {
+    .tacacs-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .tacacs-stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+.tacacs-device-actions,
+.tacacs-user-actions,
+.tacacs-policy-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.tacacs-device-actions .btn,
+.tacacs-user-actions .btn,
+.tacacs-policy-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.tacacs-section-title {
+    margin-top: 28px;
+    margin-bottom: 16px;
+    font-size: 20px;
+}
+
+.tacacs-user-form-section,
+.tacacs-users-table-section {
+    margin-bottom: 30px;
+    padding: 20px 24px 24px;
+    background: #ffffff;
+    border-radius: 8px;
+}
+
+.tacacs-user-form-section .tacacs-section-title,
+.tacacs-users-table-section .tacacs-section-title {
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+
+/* ============================================================
+ * TACACS section layout
+ * ============================================================ */
+
+.tacacs-dashboard-section,
+.tacacs-device-form-section,
+.tacacs-devices-table-section,
+.tacacs-policy-form-section,
+.tacacs-policies-table-section,
+.tacacs-policy-rule-form-section,
+.tacacs-policy-rules-table-section {
+    margin-bottom: 30px;
+    padding: 20px 24px 24px;
+    background: #ffffff;
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+.tacacs-dashboard-section .tacacs-section-title,
+.tacacs-device-form-section .tacacs-section-title,
+.tacacs-devices-table-section .tacacs-section-title,
+.tacacs-policy-form-section .tacacs-section-title,
+.tacacs-policies-table-section .tacacs-section-title,
+.tacacs-policy-rule-form-section .tacacs-section-title,
+.tacacs-policy-rules-table-section .tacacs-section-title {
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+.tacacs-dashboard-section .tacacs-stats {
+    margin-bottom: 0;
+}
+
+/* TACACS+ page sections */
+
+.tacacs-dashboard {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 20px 24px 24px;
+    background: #ffffff;
+    border-radius: 8px;
+}
+
+.tacacs-device-form-section,
+.tacacs-devices-table-section {
+    margin-bottom: 30px;
+    padding: 20px 24px 24px;
+    background: #ffffff;
+    border-radius: 8px;
+}
+
+.tacacs-device-form-section .tacacs-section-title,
+.tacacs-devices-table-section .tacacs-section-title {
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+
+/* TACACS+ Policies */
+
+.tacacs-policy-section,
+.tacacs-policy-rule-section {
+    margin-bottom: 30px;
+    padding: 20px 24px 24px;
+    background: #ffffff;
+    border-radius: 8px;
+}
+
+.tacacs-policy-section .tacacs-section-title,
+.tacacs-policy-rule-section .tacacs-section-title {
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+.tacacs-policy-section .tacacs-section-title + .tacacs-section-title,
+.tacacs-policy-rule-section .tacacs-section-title + .tacacs-section-title {
+    margin-top: 28px;
+}
+
+
+/* TACACS+ Dashboard sections */
+
+.tacacs-dashboard {
+    width: 100%;
+    box-sizing: border-box;
+    background: transparent;
+}
+
+.tacacs-dashboard-section {
+    box-sizing: border-box;
+    width: 100%;
+    margin-bottom: 24px;
+    padding: 20px 24px 24px;
+    background: #ffffff;
+    border-radius: 8px;
+}
+
+.tacacs-dashboard-section:last-child {
+    margin-bottom: 0;
+}
+
+.tacacs-dashboard-section .tacacs-section-title {
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+
+/* Dashboard section spacing */
+
+.tacacs-dashboard-section .tacacs-section-title {
+    margin-top: 0;
+    margin-bottom: 8px;
+}
+
+.tacacs-dashboard-section .tacacs-section-title:not(:first-child) {
+    margin-top: 32px;
+}
+
+.tacacs-dashboard-section .tacacs-section-title + table {
+    margin-top: 0;
+}
+
+
+/* TACACS+ Assignments: match Users, Devices and Policies sections */
+.tacacs-assignment-section {
+    margin-bottom: 24px;
+    padding: 20px 24px 24px;
+    background: #ffffff;
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+.tacacs-assignment-section .tacacs-section-title {
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+
+/* TACACS+ audit history */
+.tacacs-audit-note {
+    margin: 8px 0 14px;
+    padding: 8px 12px;
+    border-left: 3px solid #6f8195;
+    background: rgba(127, 127, 127, 0.08);
+}
+.tacacs-audit-command {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    max-width: 420px;
+}
+.tacacs-audit-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin: 16px 0;
+}
+
+
+/* TACACS+ Assignments page-password lock screen and recovery modal */
+.tacacs-reset-button-wrap {
+    max-width: 560px;
+    margin: 12px auto 0;
+    text-align: center;
+}
+
+.tacacs-reset-open {
+    min-height: 36px;
+    padding: 8px 18px;
+    border: 1px solid #768d9e;
+    border-radius: 5px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+
+.tacacs-reset-open:hover {
+    background: rgba(127, 127, 127, 0.12);
+}
+
+.tacacs-reset-modal[hidden] {
+    display: none !important;
+}
+
+.tacacs-reset-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    padding: 20px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.58);
+}
+
+.tacacs-reset-modal-content {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 620px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    padding: 24px;
+    border: 1px solid rgba(127, 127, 127, 0.35);
+    border-radius: 10px;
+    background: #fff;
+    color: #20252b;
+    box-shadow: 0 18px 55px rgba(0, 0, 0, 0.28);
+}
+
+.tacacs-reset-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.tacacs-reset-modal-header .tacacs-section-title {
+    margin: 0 0 16px;
+}
+
+.tacacs-reset-close {
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    color: inherit;
+    font-size: 26px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.tacacs-reset-close:hover {
+    background: rgba(127, 127, 127, 0.14);
+}
+
+body.tacacs-modal-open {
+    overflow: hidden;
+}
+
+@media (max-width: 600px) {
+    .tacacs-reset-modal { padding: 10px; }
+    .tacacs-reset-modal-content {
+        max-height: calc(100vh - 20px);
+        padding: 18px;
+    }
+}
+
+/* Centered TACACS+ Assignments password lock screen */
+.tacacs-assignment-lock-screen {
+    position: relative;
+    inset: auto;
+    z-index: 1;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    overflow-y: auto;
+    background: rgba(15, 23, 42, 0.38);
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+    width: 100%;
+    min-height: calc(100vh - 115px);
+    height: calc(100vh - 115px);
+    max-height: none;
+    margin: 0 auto;
+    isolation: isolate;
+    overflow-x: hidden;
+}
+
+.tacacs-assignment-lock-card {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 680px;
+    margin: auto;
+    padding: 36px 40px;
+    border: 1px solid rgba(255,255,255,.68);
+    border-radius: 12px;
+    background: transparent;
+    color: #fff;
+    box-shadow: none;
+    position: relative;
+    z-index: 1;
+}
+
+.tacacs-assignment-lock-card > .tacacs-assignment-section {
+    margin: 0 0 18px;
+    padding: 0;
+    background: transparent;
+    border-radius: 0;
+}
+
+.tacacs-assignment-lock-card .tacacs-section-title {
+    margin-top: 0;
+    margin-bottom: 14px;
+    color: #fff;
+}
+
+.tacacs-assignment-lock-card p {
+    line-height: 1.6;
+}
+
+.tacacs-assignment-lock-card .tacacs-reset-button-wrap {
+    margin-top: 16px;
+}
+
+.tacacs-assignment-lock-card .tacacs-reset-open {
+    min-width: 160px;
+}
+
+.tacacs-lock-error {
+    margin-bottom: 18px;
+    padding: 10px 12px;
+    border-radius: 5px;
+}
+
+    .tacacs-assignment-lock-screen {
+        padding: 14px;
+    }
+
+    .tacacs-assignment-lock-card {
+        padding: 22px 18px;
+    }
+}
+
+.tacacs-assignment-lock-card label {
+    color: #fff;
+}
+
+.tacacs-assignment-lock-screen::before {
+    content: "";
+    position: absolute;
+    inset: -20px;
+    z-index: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse at 14% 18%, rgba(197,218,235,.82) 0%, transparent 40%), radial-gradient(ellipse at 78% 33%, rgba(116,159,190,.72) 0%, transparent 38%), radial-gradient(ellipse at 42% 82%, rgba(230,236,242,.45) 0%, transparent 34%), repeating-linear-gradient(0deg, rgba(255,255,255,.12) 0 1px, transparent 1px 40px);
+    filter: blur(18px);
+    opacity: .95;
+    transform: scale(1.04);
+}
+
+/* BEGIN TACACS liquid glass viewport overlay v1 */
+.tacacs-assignment-lock-screen {
+    position: relative;
+    box-sizing: border-box;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    width: 100%;
+    min-height: calc(100vh - 115px);
+    margin: 0;
+    padding: clamp(20px, 3vw, 48px);
+    overflow: hidden;
+    color: #fff;
+    background:
+        linear-gradient(135deg,
+            rgba(235, 247, 255, 0.12),
+            rgba(105, 165, 198, 0.08) 45%,
+            rgba(13, 29, 44, 0.20)),
+        rgba(18, 32, 48, 0.20);
+    -webkit-backdrop-filter: blur(20px) saturate(165%) contrast(103%);
+    backdrop-filter: blur(20px) saturate(165%) contrast(103%);
+}
+
+/* When JavaScript measures Zabbix main, cover that complete viewport region. */
+.tacacs-assignment-lock-screen.tacacs-liquid-glass-viewport-bound {
+    position: fixed !important;
+    inset: auto !important;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    min-height: 0;
+    max-height: none;
+    margin: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    z-index: 900;
+}
+
+.tacacs-assignment-lock-screen::before {
+    content: "";
+    position: absolute;
+    inset: -28px;
+    z-index: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(ellipse at 14% 14%,
+            rgba(173, 222, 249, 0.30), transparent 39%),
+        radial-gradient(ellipse at 85% 28%,
+            rgba(113, 179, 218, 0.24), transparent 38%),
+        radial-gradient(ellipse at 44% 90%,
+            rgba(238, 248, 255, 0.20), transparent 39%),
+        linear-gradient(125deg,
+            rgba(255, 255, 255, 0.08),
+            rgba(20, 47, 67, 0.10));
+    filter: blur(26px) saturate(155%);
+    opacity: 0.95;
+    transform: scale(1.04);
+}
+
+/* The password controls sit directly on the glass background, not in a card. */
+.tacacs-assignment-lock-screen > * {
+    position: relative;
+    z-index: 1;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 760px;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.tacacs-assignment-lock-screen > .tacacs-assignment-section {
+    padding: 8px 0;
+}
+
+.tacacs-assignment-lock-screen .tacacs-section-title,
+.tacacs-assignment-lock-screen label {
+    color: #fff;
+}
+
+.tacacs-assignment-lock-screen p {
+    color: rgba(255, 255, 255, 0.91);
+    line-height: 1.6;
+}
+
+.tacacs-assignment-lock-screen .tacacs-lock-error {
+    width: 100%;
+    max-width: 760px;
+    padding: 10px 14px;
+    border: 1px solid rgba(255, 180, 180, 0.70);
+    border-radius: 6px;
+    background: rgba(125, 23, 35, 0.28);
+    color: #fff;
+}
+
+.tacacs-assignment-lock-screen .tacacs-reset-button-wrap {
+    padding-top: 4px;
+}
+
+@media (max-width: 600px) {
+    .tacacs-assignment-lock-screen {
+        gap: 10px;
+        padding: 16px;
+        min-height: calc(100vh - 90px);
+    }
+
+    .tacacs-assignment-lock-screen.tacacs-liquid-glass-viewport-bound {
+        padding: 16px;
+    }
+
+    .tacacs-assignment-lock-screen > * {
+        max-width: 100%;
+    }
+}
+/* END TACACS liquid glass viewport overlay v1 */
+
+/* BEGIN TACACS lock control refinements v1 */
+.tacacs-assignment-lock-screen .tacacs-section-title {
+    font-size: clamp(1.7rem, 2.5vw, 2.2rem) !important;
+    font-weight: 650;
+    line-height: 1.25;
+    text-align: center;
+    margin: 0 0 18px;
+}
+
+.tacacs-assignment-lock-screen .tacacs-lock-actions {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: center !important;
+    align-items: center !important;
+    flex-wrap: wrap;
+    gap: 10px;
+    width: 100%;
+    margin: 14px 0 0 !important;
+    padding: 0 !important;
+}
+
+.tacacs-assignment-lock-screen .tacacs-lock-actions .tacacs-lock-action-button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    vertical-align: middle;
+    box-sizing: border-box;
+    min-width: 150px;
+    min-height: 38px;
+    margin: 0 !important;
+    padding: 8px 14px !important;
+    border: 1px solid rgba(255, 255, 255, 0.68) !important;
+    border-radius: 7px !important;
+    background: rgba(255, 255, 255, 0.13) !important;
+    color: #fff !important;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.25;
+    white-space: normal;
+    cursor: pointer;
+}
+
+.tacacs-assignment-lock-screen .tacacs-lock-actions .tacacs-lock-action-button:hover {
+    background: rgba(255, 255, 255, 0.25) !important;
+    border-color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.tacacs-assignment-lock-screen .tacacs-lock-actions .tacacs-lock-action-button:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+    .tacacs-assignment-lock-screen .tacacs-section-title {
+        font-size: 1.7rem !important;
+    }
+
+    .tacacs-assignment-lock-screen .tacacs-lock-actions {
+        gap: 8px;
+    }
+
+    .tacacs-assignment-lock-screen .tacacs-lock-actions .tacacs-lock-action-button {
+        min-width: 130px;
+        flex: 0 1 150px;
+    }
+}
+/* END TACACS lock control refinements v1 */
+
+/* BEGIN TACACS centered password control v1 */
+.tacacs-assignment-lock-screen > .tacacs-assignment-section p {
+    width: 100%;
+    max-width: 760px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+}
+
+.tacacs-assignment-lock-screen form[name="tacacs_assignment_page_unlock"] {
+    width: 100%;
+    max-width: 560px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.tacacs-assignment-lock-screen form[name="tacacs_assignment_page_unlock"] .form-grid {
+    position: relative;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    justify-content: center !important;
+    justify-items: center !important;
+    align-items: center !important;
+    row-gap: 8px !important;
+    width: 100%;
+    min-height: 38px;
+}
+
+.tacacs-assignment-lock-screen form[name="tacacs_assignment_page_unlock"] .form-grid > label,
+.tacacs-assignment-lock-screen form[name="tacacs_assignment_page_unlock"] .form-grid > .form-label-asterisk {
+    position: absolute;
+    left: calc(50% - 264px);
+    top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    width: 92px;
+    height: 38px;
+    margin: 0;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: right;
+}
+
+.tacacs-assignment-lock-screen form[name="tacacs_assignment_page_unlock"] .form-field {
+    display: flex;
+    grid-column: 1;
+    justify-content: center;
+    align-items: center;
+    width: 320px;
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+.tacacs-assignment-lock-screen form[name="tacacs_assignment_page_unlock"] #page_password {
+    box-sizing: border-box;
+    width: 320px !important;
+    max-width: 100%;
+    height: 38px !important;
+    min-height: 38px;
+}
+
+@media (max-width: 600px) {
+    .tacacs-assignment-lock-screen form[name="tacacs_assignment_page_unlock"] {
+        max-width: 100%;
+    }
+
+    .tacacs-assignment-lock-screen form[name="tacacs_assignment_page_unlock"] .form-grid {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    .tacacs-assignment-lock-screen form[name="tacacs_assignment_page_unlock"] .form-grid > label,
+    .tacacs-assignment-lock-screen form[name="tacacs_assignment_page_unlock"] .form-grid > .form-label-asterisk {
+        position: static;
+        grid-column: 1;
+        justify-content: center;
+        width: 100%;
+        height: auto;
+        text-align: center;
+    }
+
+    .tacacs-assignment-lock-screen form[name="tacacs_assignment_page_unlock"] .form-field {
+        grid-column: 1;
+        width: min(320px, 100%);
+    }
+
+    .tacacs-assignment-lock-screen form[name="tacacs_assignment_page_unlock"] #page_password {
+        width: 100% !important;
+    }
+}
+/* END TACACS centered password control v1 */
+
+/* BEGIN TACACS typography scale v1 */
+
+/* Unlock Page: approximately two steps larger. */
+.tacacs-assignment-lock-screen > .tacacs-assignment-section > .tacacs-section-title {
+    font-size: clamp(2.2rem, 3vw, 2.7rem) !important;
+    line-height: 1.2 !important;
+}
+
+/* Description: one step larger for comfortable reading. */
+.tacacs-assignment-lock-screen > .tacacs-assignment-section > p {
+    font-size: 15px !important;
+    line-height: 1.65 !important;
+}
+
+/* Password label: two steps larger, while preserving its position. */
+.tacacs-assignment-lock-screen form[name="tacacs_assignment_page_unlock"] .form-grid > label,
+.tacacs-assignment-lock-screen form[name="tacacs_assignment_page_unlock"] .form-grid > .form-label-asterisk {
+    font-size: 22px !important;
+    line-height: 1.2 !important;
+}
+
+/* Keep the heading balanced on narrow screens. */
+@media (max-width: 600px) {
+    .tacacs-assignment-lock-screen > .tacacs-assignment-section > .tacacs-section-title {
+        font-size: 2.2rem !important;
+    }
+}
+
+/* END TACACS typography scale v1 */
+
+/* BEGIN TACACS centered lock description v1 */
+.tacacs-assignment-lock-screen > .tacacs-assignment-section > .tacacs-section-title {
+    text-align: center !important;
+}
+
+.tacacs-assignment-lock-screen > .tacacs-assignment-section > p {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 760px;
+    margin: 8px auto 0 !important;
+    text-align: center !important;
+    line-height: 1.65;
+    font-size: 14px !important;
+}
+/* END TACACS centered lock description v1 */
+
+/* BEGIN TACACS assignment logout button v1 */
+.tacacs-assignment-logout-wrap {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    width: 100%;
+    margin: 0 0 14px;
+}
+
+.tacacs-assignment-logout-wrap form {
+    display: flex;
+    justify-content: flex-end;
+    margin: 0;
+}
+
+.tacacs-assignment-logout-button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 36px;
+    margin: 0 !important;
+    padding: 7px 16px !important;
+    border: 1px solid rgba(127, 140, 155, 0.55) !important;
+    border-radius: 7px !important;
+    background: rgba(127, 140, 155, 0.10) !important;
+    color: inherit !important;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.25;
+    text-align: center !important;
+    cursor: pointer;
+}
+
+.tacacs-assignment-logout-button:hover {
+    background: rgba(127, 140, 155, 0.20) !important;
+}
+
+.tacacs-assignment-logout-button:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+}
+/* END TACACS assignment logout button v1 */
+
+/* BEGIN TACACS inline reset section v1 */
+.tacacs-reset-inline[hidden] {
+    display: none !important;
+}
+
+.tacacs-assignment-lock-screen > .tacacs-reset-inline {
+    box-sizing: border-box;
+    width: min(760px, calc(100% - 32px)) !important;
+    max-width: 760px !important;
+    margin: 20px auto 28px !important;
+    padding: 22px 26px !important;
+    border: 1px solid rgba(255, 255, 255, 0.42) !important;
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.09) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(155%);
+    backdrop-filter: blur(16px) saturate(155%);
+    color: #fff;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.10) !important;
+}
+
+.tacacs-reset-inline > .tacacs-section-title {
+    margin: 0 0 12px;
+    color: #fff;
+    font-size: 1.6rem;
+    text-align: center;
+}
+
+.tacacs-reset-inline > p {
+    margin: 0 auto 18px;
+    max-width: 680px;
+    color: rgba(255, 255, 255, 0.92);
+    text-align: center;
+    line-height: 1.6;
+}
+
+.tacacs-reset-inline label {
+    color: #fff;
+}
+
+.tacacs-reset-inline .form-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 16px;
+}
+
+.tacacs-reset-inline .form-actions button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+@media (max-width: 600px) {
+    .tacacs-assignment-lock-screen > .tacacs-reset-inline {
+        width: calc(100% - 20px) !important;
+        padding: 16px !important;
+    }
+}
+/* END TACACS inline reset section v1 */
+
+/* BEGIN TACACS native Reset disclosure v1 */
+.tacacs-assignment-lock-screen > .tacacs-lock-actions {
+    position: relative !important;
+    z-index: 15;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px;
+    width: 100% !important;
+    max-width: 760px !important;
+    margin: 14px auto 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+}
+
+.tacacs-assignment-lock-screen .tacacs-reset-details {
+    position: static;
+    display: block;
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 0;
+}
+
+.tacacs-assignment-lock-screen .tacacs-reset-summary {
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+}
+
+.tacacs-assignment-lock-screen .tacacs-reset-summary::-webkit-details-marker {
+    display: none;
+}
+
+.tacacs-assignment-lock-screen .tacacs-reset-summary::marker {
+    content: "";
+}
+
+.tacacs-assignment-lock-screen .tacacs-reset-details[open] > .tacacs-reset-inline {
+    position: absolute;
+    top: calc(100% + 12px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 30;
+    box-sizing: border-box;
+    display: block;
+    width: min(760px, calc(100vw - 36px)) !important;
+    max-width: 760px !important;
+    max-height: calc(100vh - 150px);
+    margin: 0 !important;
+    padding: 22px 26px !important;
+    overflow: auto;
+    border: 1px solid rgba(255, 255, 255, 0.42) !important;
+    border-radius: 12px !important;
+    background: rgba(26, 43, 58, 0.94) !important;
+    color: #fff;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(155%);
+    backdrop-filter: blur(16px) saturate(155%);
+}
+
+.tacacs-assignment-lock-screen .tacacs-reset-details[open] > .tacacs-reset-inline .tacacs-section-title,
+.tacacs-assignment-lock-screen .tacacs-reset-details[open] > .tacacs-reset-inline label {
+    color: #fff;
+}
+
+@media (max-width: 600px) {
+    .tacacs-assignment-lock-screen > .tacacs-lock-actions {
+        gap: 8px;
+    }
+
+    .tacacs-assignment-lock-screen .tacacs-reset-details[open] > .tacacs-reset-inline {
+        width: calc(100vw - 28px) !important;
+        max-height: calc(100vh - 100px);
+        padding: 16px !important;
+    }
+}
+/* END TACACS native Reset disclosure v1 */
+
+/* BEGIN TACACS reset scrolling layout v1 */
+
+/* Keep the full content overlay scrollable when Reset expands. */
+.tacacs-assignment-lock-screen.tacacs-liquid-glass-viewport-bound {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain;
+    scrollbar-gutter: stable;
+    padding-bottom: 48px !important;
+}
+
+/* Keep Unlock and Reset side-by-side while the disclosure is closed. */
+.tacacs-assignment-lock-screen > .tacacs-lock-actions {
+    position: relative !important;
+    display: grid !important;
+    grid-template-columns: max-content max-content;
+    grid-template-rows: auto auto;
+    justify-content: center !important;
+    align-items: start !important;
+    gap: 10px;
+    width: 100% !important;
+    max-width: 760px !important;
+    margin: 14px auto 0 !important;
+    padding: 0 0 20px !important;
+    overflow: visible !important;
+}
+
+.tacacs-assignment-lock-screen > .tacacs-lock-actions > .tacacs-lock-action-button {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: center;
+}
+
+/* Native details stays in the button row when closed. */
+.tacacs-assignment-lock-screen .tacacs-reset-details {
+    position: static !important;
+    display: block;
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+}
+
+/* When open, expose summary and form as grid items. The form becomes a
+   normal second row, so it increases scroll height instead of being clipped. */
+.tacacs-assignment-lock-screen .tacacs-reset-details[open] {
+    display: contents !important;
+}
+
+.tacacs-assignment-lock-screen .tacacs-reset-details > .tacacs-reset-summary {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: center;
+    align-self: start;
+}
+
+.tacacs-assignment-lock-screen .tacacs-reset-details[open] > .tacacs-reset-inline {
+    position: relative !important;
+    inset: auto !important;
+    top: auto !important;
+    left: auto !important;
+    transform: none !important;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: center;
+    box-sizing: border-box;
+    display: block;
+    width: min(760px, calc(100vw - 36px)) !important;
+    max-width: 760px !important;
+    max-height: none !important;
+    margin: 14px auto 20px !important;
+    padding: 22px 26px !important;
+    overflow: visible !important;
+    border: 1px solid rgba(255, 255, 255, 0.42) !important;
+    border-radius: 12px !important;
+    background: rgba(26, 43, 58, 0.94) !important;
+    color: #fff;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(155%);
+    backdrop-filter: blur(16px) saturate(155%);
+}
+
+.tacacs-assignment-lock-screen .tacacs-reset-details[open] > .tacacs-reset-inline .tacacs-section-title,
+.tacacs-assignment-lock-screen .tacacs-reset-details[open] > .tacacs-reset-inline label {
+    color: #fff;
+}
+
+@media (max-width: 600px) {
+    .tacacs-assignment-lock-screen > .tacacs-lock-actions {
+        grid-template-columns: minmax(0, max-content) minmax(0, max-content);
+        column-gap: 8px;
+        max-width: 100% !important;
+    }
+
+    .tacacs-assignment-lock-screen .tacacs-reset-details[open] > .tacacs-reset-inline {
+        width: calc(100vw - 28px) !important;
+        padding: 16px !important;
+    }
+}
+/* END TACACS reset scrolling layout v1 */
+
+/* BEGIN TACACS reset stable row v1 */
+
+/* The action row keeps its dimensions and position when Reset is expanded. */
+.tacacs-assignment-lock-screen > .tacacs-lock-actions {
+    position: relative !important;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px;
+    width: 100% !important;
+    max-width: 760px !important;
+    margin: 14px auto 0 !important;
+    padding: 0 0 6px !important;
+    overflow: visible !important;
+}
+
+/* Reset panel is a normal-flow sibling below the action row, not an overlay. */
+.tacacs-assignment-lock-screen > .tacacs-reset-inline[hidden] {
+    display: none !important;
+}
+
+.tacacs-assignment-lock-screen > .tacacs-reset-inline:not([hidden]) {
+    position: relative !important;
+    inset: auto !important;
+    top: auto !important;
+    left: auto !important;
+    transform: none !important;
+    display: block !important;
+    flex: 0 0 auto;
+    align-self: center;
+    box-sizing: border-box;
+    width: min(760px, calc(100vw - 36px)) !important;
+    max-width: 760px !important;
+    max-height: none !important;
+    margin: 18px auto 28px !important;
+    padding: 22px 26px !important;
+    overflow: visible !important;
+    border: 1px solid rgba(255, 255, 255, 0.42) !important;
+    border-radius: 12px !important;
+    background: rgba(26, 43, 58, 0.94) !important;
+    color: #fff;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(155%);
+    backdrop-filter: blur(16px) saturate(155%);
+}
+
+.tacacs-assignment-lock-screen > .tacacs-reset-inline .tacacs-section-title,
+.tacacs-assignment-lock-screen > .tacacs-reset-inline label {
+    color: #fff;
+}
+
+.tacacs-assignment-lock-screen > .tacacs-reset-inline .form-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 16px;
+}
+
+.tacacs-assignment-lock-screen > .tacacs-reset-inline .form-actions button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+@media (max-width: 600px) {
+    .tacacs-assignment-lock-screen > .tacacs-reset-inline:not([hidden]) {
+        width: calc(100vw - 28px) !important;
+        padding: 16px !important;
+    }
+}
+/* END TACACS reset stable row v1 */
+
+/* BEGIN TACACS native reset layout v3 */
+
+/* The viewport overlay itself remains the scroll container. */
+.tacacs-assignment-lock-screen.tacacs-liquid-glass-viewport-bound {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain;
+    padding-bottom: 48px !important;
+}
+
+/* Stable first row: Unlock left, Reset right. Second grid row is the form. */
+.tacacs-assignment-lock-screen > .tacacs-lock-actions {
+    position: relative !important;
+    display: grid !important;
+    grid-template-columns: max-content max-content !important;
+    grid-template-rows: auto auto !important;
+    justify-content: center !important;
+    align-items: start !important;
+    column-gap: 10px;
+    row-gap: 0;
+    width: 100% !important;
+    max-width: 760px !important;
+    margin: 14px auto 0 !important;
+    padding: 0 0 12px !important;
+    overflow: visible !important;
+}
+
+.tacacs-assignment-lock-screen > .tacacs-lock-actions > .tacacs-lock-action-button {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+/* Flatten details so its summary and form can occupy separate grid cells. */
+.tacacs-assignment-lock-screen > .tacacs-lock-actions > .tacacs-reset-details {
+    display: contents !important;
+}
+
+.tacacs-assignment-lock-screen > .tacacs-lock-actions > .tacacs-reset-details > .tacacs-reset-summary {
+    display: inline-flex !important;
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: center;
+    align-self: start;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box;
+    min-width: 150px;
+    min-height: 38px;
+    margin: 0 !important;
+    padding: 8px 14px !important;
+    border: 1px solid rgba(255, 255, 255, 0.68) !important;
+    border-radius: 7px !important;
+    background: rgba(255, 255, 255, 0.13) !important;
+    color: #fff !important;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.25;
+    text-align: center !important;
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+}
+
+.tacacs-assignment-lock-screen .tacacs-reset-summary::-webkit-details-marker {
+    display: none;
+}
+
+.tacacs-assignment-lock-screen .tacacs-reset-summary::marker {
+    content: "";
+}
+
+.tacacs-assignment-lock-screen .tacacs-reset-details:not([open]) > .tacacs-reset-inline {
+    display: none !important;
+}
+
+/* Expanded form occupies the full second row in normal layout flow. */
+.tacacs-assignment-lock-screen > .tacacs-lock-actions > .tacacs-reset-details > .tacacs-reset-inline {
+    display: none !important;
+    position: relative !important;
+    inset: auto !important;
+    top: auto !important;
+    left: auto !important;
+    transform: none !important;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: center;
+    align-self: start;
+    box-sizing: border-box;
+    width: min(760px, calc(100vw - 36px)) !important;
+    max-width: 760px !important;
+    max-height: none !important;
+    margin: 14px auto 24px !important;
+    padding: 22px 26px !important;
+    overflow: visible !important;
+    border: 1px solid rgba(255, 255, 255, 0.42) !important;
+    border-radius: 12px !important;
+    background: rgba(26, 43, 58, 0.94) !important;
+    color: #fff;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(155%);
+    backdrop-filter: blur(16px) saturate(155%);
+}
+
+.tacacs-assignment-lock-screen > .tacacs-lock-actions > .tacacs-reset-details[open] > .tacacs-reset-inline {
+    display: block !important;
+    position: relative !important;
+    grid-column: 1 / -1;
+    grid-row: 2;
+}
+
+.tacacs-assignment-lock-screen .tacacs-reset-inline .tacacs-section-title,
+.tacacs-assignment-lock-screen .tacacs-reset-inline label {
+    color: #fff;
+}
+
+.tacacs-assignment-lock-screen .tacacs-reset-inline .form-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 16px;
+}
+
+.tacacs-assignment-lock-screen .tacacs-reset-inline .form-actions button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+@media (max-width: 600px) {
+    .tacacs-assignment-lock-screen > .tacacs-lock-actions {
+        column-gap: 8px;
+        max-width: 100% !important;
+    }
+
+    .tacacs-assignment-lock-screen > .tacacs-lock-actions > .tacacs-reset-details > .tacacs-reset-summary {
+        min-width: 130px;
+        padding: 8px 10px !important;
+    }
+
+    .tacacs-assignment-lock-screen > .tacacs-lock-actions > .tacacs-reset-details > .tacacs-reset-inline {
+        width: calc(100vw - 28px) !important;
+        padding: 16px !important;
+    }
+}
+/* END TACACS native reset layout v3 */
+
+/* BEGIN TACACS reset visibility and flow v4 */
+
+/* Stable row: Unlock and Reset remain side by side. */
+.tacacs-assignment-lock-screen > .tacacs-lock-actions {
+    position: relative !important;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    gap: 10px;
+    width: 100% !important;
+    max-width: 760px !important;
+    margin: 14px auto 0 !important;
+    padding: 0 0 18px !important;
+    overflow: visible !important;
+}
+
+/* Override the earlier display: contents rule so the native summary renders. */
+.tacacs-assignment-lock-screen > .tacacs-lock-actions > .tacacs-reset-details {
+    display: block !important;
+    position: static !important;
+    flex: 0 0 160px !important;
+    width: 160px !important;
+    min-width: 160px;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+}
+
+.tacacs-assignment-lock-screen > .tacacs-lock-actions > .tacacs-reset-details > .tacacs-reset-summary {
+    display: inline-flex !important;
+    position: relative !important;
+    grid-column: auto !important;
+    grid-row: auto !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 150px;
+    min-height: 38px;
+    margin: 0 !important;
+    padding: 8px 12px !important;
+    border: 1px solid rgba(255, 255, 255, 0.68) !important;
+    border-radius: 7px !important;
+    background: rgba(255, 255, 255, 0.13) !important;
+    color: #fff !important;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.25;
+    text-align: center !important;
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+}
+
+.tacacs-assignment-lock-screen .tacacs-reset-summary::-webkit-details-marker {
+    display: none !important;
+}
+
+.tacacs-assignment-lock-screen .tacacs-reset-summary::marker {
+    content: "";
+}
+
+/* Closed: no reset form is shown. */
+.tacacs-assignment-lock-screen .tacacs-reset-details:not([open]) > .tacacs-reset-inline {
+    display: none !important;
+}
+
+/* Open: the panel is in normal flow and increases scroll height.
+   It is visually centered below the Reset button without moving that button. */
+.tacacs-assignment-lock-screen > .tacacs-lock-actions > .tacacs-reset-details[open] > .tacacs-reset-inline {
+    display: block !important;
+    position: relative !important;
+    inset: auto !important;
+    top: auto !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    grid-column: auto !important;
+    grid-row: auto !important;
+    box-sizing: border-box;
+    width: min(760px, calc(100vw - 36px)) !important;
+    max-width: 760px !important;
+    max-height: none !important;
+    margin: 14px 0 24px !important;
+    padding: 22px 26px !important;
+    overflow: visible !important;
+    border: 1px solid rgba(255, 255, 255, 0.42) !important;
+    border-radius: 12px !important;
+    background: rgba(26, 43, 58, 0.94) !important;
+    color: #fff;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(155%);
+    backdrop-filter: blur(16px) saturate(155%);
+}
+
+.tacacs-assignment-lock-screen > .tacacs-lock-actions > .tacacs-reset-details[open] > .tacacs-reset-inline .tacacs-section-title,
+.tacacs-assignment-lock-screen > .tacacs-lock-actions > .tacacs-reset-details[open] > .tacacs-reset-inline label {
+    color: #fff;
+}
+
+.tacacs-assignment-lock-screen > .tacacs-lock-actions > .tacacs-reset-details[open] > .tacacs-reset-inline .form-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 16px;
+}
+
+.tacacs-assignment-lock-screen > .tacacs-lock-actions > .tacacs-reset-details[open] > .tacacs-reset-inline .form-actions button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+@media (max-width: 600px) {
+    .tacacs-assignment-lock-screen > .tacacs-lock-actions > .tacacs-reset-details {
+        flex-basis: 140px !important;
+        width: 140px !important;
+        min-width: 140px;
+    }
+
+    .tacacs-assignment-lock-screen > .tacacs-lock-actions > .tacacs-reset-details[open] > .tacacs-reset-inline {
+        width: calc(100vw - 28px) !important;
+        padding: 16px !important;
+    }
+}
+/* END TACACS reset visibility and flow v4 */
+
+/* BEGIN TACACS stable reset layout v8 */
+/* Fixed action row: opening Reset never changes either button's position. */
+.tacacs-assignment-lock-screen > .tacacs-lock-actions {
+    display: flex !important;
+    flex-flow: row nowrap !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    gap: 10px !important;
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box;
+}
+
+.tacacs-assignment-lock-screen > .tacacs-lock-actions > .tacacs-lock-action-button {
+    flex: 0 0 160px !important;
+    width: 160px !important;
+    min-width: 0 !important;
+    grid-column: auto !important;
+    grid-row: auto !important;
+    box-sizing: border-box;
+}
+
+/* Details contains only the native summary/button. */
+.tacacs-assignment-lock-screen > .tacacs-lock-actions > .tacacs-reset-details {
+    display: block !important;
+    position: static !important;
+    flex: 0 0 160px !important;
+    width: 160px !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box;
+}
+
+.tacacs-assignment-lock-screen > .tacacs-lock-actions > .tacacs-reset-details > .tacacs-reset-summary {
+    display: inline-flex !important;
+    position: relative !important;
+    align-items: center !important;
+    justify-content: center !important;
+    grid-column: auto !important;
+    grid-row: auto !important;
+    width: 160px !important;
+    min-width: 0 !important;
+    min-height: 38px;
+    box-sizing: border-box;
+    cursor: pointer;
+    user-select: none;
+}
+
+.tacacs-assignment-lock-screen .tacacs-reset-summary::-webkit-details-marker {
+    display: none !important;
+}
+
+.tacacs-assignment-lock-screen .tacacs-reset-summary::marker {
+    content: "";
+}
+
+/* Hidden by default. The open native details state reveals this sibling. */
+.tacacs-assignment-lock-screen > .tacacs-reset-inline {
+    display: none !important;
+    position: relative !important;
+    inset: auto !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+    float: none !important;
+    width: min(760px, calc(100vw - 36px)) !important;
+    max-width: calc(100% - 28px) !important;
+    margin: 16px auto 0 !important;
+    padding: 22px !important;
+    box-sizing: border-box !important;
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    border-radius: 18px;
+    background: rgba(35, 43, 58, 0.80);
+    box-shadow: 0 16px 42px rgba(0, 0, 0, 0.22);
+    backdrop-filter: blur(16px) saturate(155%);
+    -webkit-backdrop-filter: blur(16px) saturate(155%);
+}
+
+/* Modern Chromium supports :has(); the form is a sibling, not inside details. */
+.tacacs-assignment-lock-screen:has(> .tacacs-lock-actions > .tacacs-reset-details[open]) > .tacacs-reset-inline {
+    display: block !important;
+    align-self: center !important;
+}
+
+.tacacs-assignment-lock-screen > .tacacs-reset-inline .tacacs-section-title,
+.tacacs-assignment-lock-screen > .tacacs-reset-inline label {
+    color: #fff;
+}
+
+.tacacs-assignment-lock-screen > .tacacs-reset-inline .form-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 16px;
+}
+
+.tacacs-assignment-lock-screen > .tacacs-reset-inline .form-actions button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+@media (max-width: 600px) {
+    .tacacs-assignment-lock-screen > .tacacs-lock-actions {
+        gap: 8px !important;
+    }
+
+    .tacacs-assignment-lock-screen > .tacacs-lock-actions > .tacacs-lock-action-button,
+    .tacacs-assignment-lock-screen > .tacacs-lock-actions > .tacacs-reset-details {
+        flex-basis: 140px !important;
+        width: 140px !important;
+    }
+
+    .tacacs-assignment-lock-screen > .tacacs-lock-actions > .tacacs-reset-details > .tacacs-reset-summary {
+        width: 140px !important;
+    }
+
+    .tacacs-assignment-lock-screen > .tacacs-reset-inline {
+        width: calc(100vw - 28px) !important;
+        max-width: calc(100% - 16px) !important;
+        padding: 16px !important;
+    }
+}
+/* END TACACS stable reset layout v8 */
+
+/* BEGIN TACACS assignment policy visibility v1 */
+#tacacs-assignment-policy-selection[hidden] {
+    display: none !important;
+}
+
+#tacacs-assignment-policy-selection:not([hidden]) {
+    display: block;
+    margin-top: 12px !important;
+}
+/* END TACACS assignment policy visibility v1 */
+
+/* BEGIN TACACS separate access mode cards v1 */
+.tacacs-assignment-mode-choices {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    width: 100%;
+}
+
+.tacacs-assignment-mode-option {
+    box-sizing: border-box;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    min-width: 0;
+    min-height: 96px;
+    padding: 16px;
+    border: 1px solid #c8d0da;
+    border-radius: 8px;
+    background: #fff;
+    color: #27313d;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.tacacs-assignment-mode-option:hover {
+    border-color: #6c9bc6;
+    background: #f8fbff;
+}
+
+.tacacs-assignment-mode-option.is-selected {
+    border-color: #2878b8;
+    background: #eef6ff;
+    box-shadow: inset 0 0 0 1px #2878b8;
+}
+
+.tacacs-assignment-mode-option input[type="radio"] {
+    flex: 0 0 auto;
+    margin: 4px 0 0;
+}
+
+.tacacs-assignment-mode-option-content {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 0;
+}
+
+.tacacs-assignment-mode-title {
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.tacacs-assignment-mode-description {
+    color: #596575;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+    .tacacs-assignment-mode-choices {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+/* END TACACS separate access mode cards v1 */
+
+/* BEGIN TACACS compact access mode v2 */
+.tacacs-assignment-mode-choices {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    width: min(100%, 340px) !important;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.tacacs-assignment-mode-option {
+    box-sizing: border-box;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 24px !important;
+    min-height: 24px !important;
+    padding: 1px 6px !important;
+    border: 1px solid #c8d0da;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+}
+
+.tacacs-assignment-mode-option.is-selected {
+    border-color: #2878b8;
+    background: #eef6ff;
+    box-shadow: inset 0 0 0 1px #2878b8;
+}
+
+.tacacs-assignment-mode-option input[type="radio"] {
+    flex: 0 0 11px;
+    width: 11px;
+    height: 11px;
+    margin: 0 !important;
+}
+
+.tacacs-assignment-mode-option-content {
+    display: block !important;
+    flex: 1;
+    min-width: 0;
+}
+
+.tacacs-assignment-mode-title {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.tacacs-assignment-mode-description {
+    display: none !important;
+}
+
+#tacacs-assignment-policy-selection[hidden] {
+    display: none !important;
+}
+
+#tacacs-assignment-policy-selection:not([hidden]) {
+    display: block !important;
+    margin-top: 12px !important;
+}
+/* END TACACS compact access mode v2 */
+
+/* BEGIN TACACS policy panel fallback v1 */
+#tacacs-assignment-policy-selection[hidden] {
+    display: none !important;
+}
+
+#tacacs-assignment-policy-selection:not([hidden]) {
+    display: block !important;
+    margin-top: 12px !important;
+}
+
+/* Fallback for modern browsers if the JS handler fails to update visibility. */
+@supports selector(form:has(input[type="radio"]:checked)) {
+    form:has(input[type="radio"][name="access_mode"][value="policy"]:checked)
+    #tacacs-assignment-policy-selection[hidden] {
+        display: block !important;
+    }
+}
+/* END TACACS policy panel fallback v1 */
+
+
+/* BEGIN TACACS assignment-policy-spacing v3 */
+#tacacs-assignment-policy-selection:not([hidden]) {
+    display: block !important;
+    margin-top: 16px !important;
+    padding-top: 8px !important;
+    clear: both;
+    box-sizing: border-box;
+}
+/* END TACACS assignment-policy-spacing v3 */
