@@ -182,6 +182,219 @@ Key files:
 
 Network-device TACACS configuration is intentionally performed manually by the administrator. Do not assume that deploying the server/module automatically configures Cisco, FortiGate or other network devices. Authentication, authorization and accounting must be tested on a lab device before production use.
 
+## 5.7 Detailed operational workflows (source-based)
+
+This section documents the intended end-to-end behavior of the three network operations integrations. It is written for maintainers and coding assistants: follow the path across all layers before changing a single component. File paths and behavior must be rechecked against the current source before implementation changes.
+
+### A. Oxidized — network configuration backup and version history
+
+#### Components and data flow
+
+```text
+Administrator / Zabbix Oxidized page
+  -> install/oxidized-module/actions/OxidizedNodes.php
+  -> validates and saves node settings / inventory
+  -> /home/oxidized/.config/oxidized/config
+  -> /home/oxidized/.config/oxidized/router.db
+  -> Oxidized service (SSH + vendor/model driver)
+  -> /home/oxidized/.config/oxidized/configs (Git repository)
+  -> Apache reverse proxy /oxidized/ -> local web service :8888
+
+systemd timer
+  -> oxidized-node-scheduler
+  -> reads node-settings.json and due time
+  -> requests Oxidized node endpoint
+  -> advances next-backup time when the request succeeds
+```
+
+Main source files:
+- Installer: `install/08-oxidized.sh`
+- Scheduler: `install/oxidized/oxidized-node-scheduler`
+- systemd units: `install/oxidized/oxidized-node-scheduler.service` and `install/oxidized/oxidized-node-scheduler.timer`
+- Zabbix module: `install/oxidized-module/`, module ID `oxidized`, action `oxidized.nodes`
+
+#### Adding or editing a node
+
+1. Use the Oxidized frontend module to enter the node name, model, address, SSH username, password and port (normally 22), and backup interval in days.
+2. Save the node. The module must validate the input and persist it to the inventory/settings files expected by the installed Oxidized instance.
+3. The node must use a model supported by the installed Oxidized version and have working network reachability and valid credentials. A syntactically valid form is not proof that SSH login or command collection will work.
+4. Reload Oxidized when needed so changes to the inventory/config are picked up. Use “Backup Now” to request an immediate collection when the UI supports it.
+5. Check the resulting file under the Git-backed `configs/` directory and inspect the Git history/diff to confirm a backup was actually stored.
+
+When editing an existing node, an empty password field is intended to mean “keep the existing password”; verify this behavior in the current controller before changing form or persistence logic. Never log or commit the password.
+
+#### Per-node scheduling
+
+- The scheduler reads each node's interval and next scheduled time from `node-settings.json`; the timer invokes the scheduler periodically (currently designed to run about once per minute).
+- For a due node, it calls the local Oxidized node endpoint (currently expected at `http://127.0.0.1:8888/oxidized/node/next/<node>.json`).
+- A successful HTTP 2xx response means the request was accepted/returned successfully. It does **not** independently prove that device authentication, command collection, Git commit or configuration parsing succeeded.
+- State updates should be protected against overlapping runs (the scheduler uses a lock). Preserve this property when modifying the scheduler.
+- Confirm the exact endpoint, node-name encoding and settings format in source before changing them; do not assume all node names are safe to place directly in a URL.
+
+#### What Oxidized does and does not prove
+
+Oxidized periodically collects configuration using vendor/model-specific logic and records snapshots in Git. Git history helps compare configuration versions and determine what changed between successful backups. It is **not** a TACACS+ command-accounting system: a diff cannot reliably identify who typed a command, every intermediate command, or the exact time each CLI command was entered.
+
+Troubleshooting order:
+1. Check `oxidized.service`, scheduler timer/service and their logs.
+2. Confirm local web endpoint and Apache proxy path `/oxidized/`.
+3. Verify inventory entry, model, credentials and SSH reachability from the Oxidized service account.
+4. Inspect Oxidized logs for login/enable/prompt/model errors.
+5. Check whether the node's config file changed and whether Git recorded a new version.
+6. If the UI says a backup was requested, distinguish “request accepted” from “backup committed”.
+
+### B. Network Syslog — receive, store, discover and display device logs
+
+#### End-to-end data flow
+
+```text
+Network device
+  -- Syslog over UDP/514 -->
+rsyslog on the Zabbix server
+  -> /var/log/network/<source-ip>/syslog.log
+  -> /var/log/network/<source-ip>/events.log (filtered events)
+  -> logrotate policy
+
+Zabbix Agent UserParameter
+  -> /usr/local/bin/zabbix-network-syslog-discovery
+  -> JSON list of IP-named directories
+  -> network.syslog.discovery
+  -> Zabbix low-level discovery (LLD) / discovered objects
+
+Zabbix frontend module NetworkSyslog
+  -> scans source-IP directories and reads selected log file
+  -> paginates a bounded set of lines for the UI
+```
+
+Main source files:
+- Receiver configuration: `install/06-rsyslog.sh` (deployed config is under `/etc/rsyslog.d/`)
+- Rotation: `install/07-logrotate.sh`, deployed as `/etc/logrotate.d/network-syslog`
+- API/LLD installation: `install/10-network-syslog.sh`
+- Agent key: `install/zabbix/network-syslog.conf`
+- Discovery script: `install/zabbix/network-syslog-discovery`, installed as `/usr/local/bin/zabbix-network-syslog-discovery`
+- UI module: `install/zabbix/modules/NetworkSyslog/`
+
+#### Receive and store
+
+1. Configure each network device manually to send Syslog to the server address and UDP port 514. The server-side installer does not automatically configure routers, switches or firewalls.
+2. rsyslog receives messages and writes logs grouped by source IP:
+   - Full log: `/var/log/network/<source-ip>/syslog.log`
+   - Filtered event log: `/var/log/network/<source-ip>/events.log`
+3. File and directory permissions/ACLs must let the Zabbix frontend process read the data without granting unnecessary write access.
+4. Logrotate controls growth of `/var/log/network/*/*.log`. Validate that rotated files remain compatible with the UI and retention expectations.
+
+UDP Syslog can lose messages; it does not provide the delivery guarantees of a reliable transport. Also, source IP reflects the packet source as seen by the receiver and may be affected by NAT or relays.
+
+#### Discovery and dashboard
+
+1. The discovery script scans immediate subdirectories under `/var/log/network` and emits LLD JSON for directory names that look like IPv4 addresses.
+2. The agent exposes that output through `network.syslog.discovery`.
+3. The Zabbix discovery rule created/updated by `install/10-network-syslog.sh` consumes the JSON and creates the configured discovered objects/items.
+4. The Network Syslog frontend module reads log files directly from the filesystem, validates the selected IP and log type, and displays a bounded page of lines (currently capped at 500 lines per request in the implementation described by this guide).
+5. These are related but distinct paths: Zabbix LLD object discovery does not itself guarantee that the UI can read the log file, and the custom UI's filesystem read is not the same as reading a Zabbix item-history value.
+
+A directory may remain after a device stops sending logs. Therefore, the presence of a directory proves only that a matching directory exists; it does not prove the device is currently online or sending recent messages. If current activity matters, use log modification time or add an explicit “last message seen” check instead of treating directory discovery as liveness.
+
+#### Troubleshooting order
+
+1. Confirm the device's configured destination and source address.
+2. Check UDP/514 reachability, host firewall policy and `rsyslog` service status.
+3. Confirm a fresh message is appended to the correct `syslog.log` and that event filtering behaves as expected in `events.log`.
+4. Run the discovery executable directly and validate its JSON output.
+5. Test the agent key and confirm the Zabbix server/proxy can retrieve it.
+6. Inspect the LLD rule status, last check, errors and discovered objects.
+7. Check the Network Syslog module's file permissions, selected IP/log type, and pagination behavior.
+8. Verify logrotate configuration and ACLs after rotation.
+
+Do not “fix” a missing dashboard device by changing only the view before proving which stage of this chain failed.
+
+### C. TACACS+ — centralized authentication, command authorization and accounting
+
+#### Architecture and data flow
+
+```text
+Network device (TACACS+ client / NAS)
+  -- TCP/49: authentication, authorization, accounting -->
+tac_plus daemon + /etc/tac_plus.conf
+  <- generated by install/tacacs/tacacs-config-generator.php
+  <- reads users/devices/policies/rules/assignments from MariaDB
+
+Zabbix TACACS+ module
+  -> users, devices, policies, policy rules and assignments in DB
+  -> configuration generator
+  -> validate temporary config with tac_plus -P
+  -> replace generated TACACS config only after validation
+
+tac_plus accounting log
+  -> install/tacacs/tacacs-audit-collector.php
+  -> parse records / track file progress and fingerprint
+  -> audit_log table
+  -> tacacs.auditlogs UI and tacacs.auditlogs.csv export
+```
+
+Main source files:
+- Optional integration installer: `install/11-tacacs.sh`
+- Schema: `install/tacacs/schema.sql`
+- Config generator: `install/tacacs/tacacs-config-generator.php`
+- Accounting collector: `install/tacacs/tacacs-audit-collector.php`
+- Migrations, tests and service/timer units: `install/tacacs/`
+- Frontend: `install/tacacs-module/`, module ID `tacacs`
+
+#### Configuration lifecycle
+
+1. An administrator creates or updates users, network devices, policies, command rules and assignments in the Zabbix TACACS+ module.
+2. The database represents entities and their relationships. Core tables include `users`, `devices`, `policies`, `policy_rules`, `user_devices`, `user_policies`, `device_policies`, `assignments`, `audit_log` and `assignment_page_security`. Always inspect the current schema and migrations before changing a field or relation.
+3. Policy rules are ordered command/argument match rules with an action such as `permit` or `deny`. Matching behavior, rule precedence, default behavior and device-specific syntax are security-critical; verify them in the generator and tests instead of inferring from UI labels.
+4. The config generator reads the DB and produces TACACS daemon configuration, including user/group/policy mappings and device/NAS restrictions as implemented by the current source.
+5. It validates a temporary generated file using `tac_plus -C <temporary-file> -P`. Only a parser-valid file should replace the generated target. Parser success proves syntax acceptance, not that every policy will behave as intended on a live device.
+6. The network administrator manually configures each device to use the server for AAA. The installer/module does not automatically configure Cisco, FortiGate or other device CLI settings.
+7. Test a lab login, permitted commands, denied commands, fallback behavior and accounting before production use.
+
+The design avoids imposing one universal privilege level because vendors implement command authorization differently. Do not reintroduce a single hard-coded privilege-level assumption as a shortcut. Keep policy matching vendor-aware and document any device-specific limitation. In particular, test Cisco enable/privilege behavior and command authorization against the exact device OS and TACACS client behavior.
+
+#### Authentication, authorization and accounting are separate
+
+- **Authentication:** establishes the user's identity. Success depends on the configured user credentials, daemon configuration and device AAA method/order.
+- **Authorization:** determines whether a requested service/command is allowed under the policy and assignment model. A successful login does not prove that command restrictions are correct.
+- **Accounting:** the device sends records to the TACACS+ server for sessions and/or commands, depending on the device's AAA accounting configuration and what the platform supports. The server can only collect records that are actually sent and written.
+- **Audit UI/export:** the collector parses accounting log records and stores normalized fields in `audit_log`; the module filters/displays them and can export CSV. Parsed/displayed records may lack fields that the device or source log did not provide.
+
+Do not claim that every command is audited merely because TACACS+ authentication works or an audit page exists. Confirm per-device accounting configuration and inspect raw accounting records. A collector record or generic status such as `info` is not necessarily proof that the command executed successfully on the device.
+
+#### Collector and audit investigation
+
+When an audit record is missing or wrong:
+1. Confirm the device is configured to send accounting for the required event types (login, exec, command, etc.) and that it points to the expected TACACS server.
+2. Check daemon logs and the raw accounting log before looking at the database/UI.
+3. Inspect collector service/timer status, journal output, configured input path, tracked offset/file state and duplicate-detection fingerprint logic.
+4. Compare the raw record with the inserted `audit_log` row; verify username, device, command, event type, result and timestamp independently.
+5. Check year handling for records whose source timestamp omits a year, especially around the December/January boundary.
+6. Verify UI filters, pagination, access control and CSV export against the same DB records.
+7. Test collector restarts, file rotation/truncation and repeated runs so records are neither silently skipped nor duplicated.
+
+#### Optional installer boundaries and safety
+
+`install/11-tacacs.sh` is optional. It checks for prerequisites including `/usr/sbin/tac_plus`, `/etc/tacacs/tacacs-db.conf`, `/etc/tac_plus.conf`, and PHP PDO/`pdo_mysql`. If prerequisites are absent, the integration may be skipped. The script is designed not to overwrite the existing `/etc/tac_plus.conf` or `/etc/tacacs/tacacs-db.conf`, and not to force the daemon's service state. Preserve these safety boundaries unless the user explicitly approves a different migration plan.
+
+Schema creation with `CREATE TABLE IF NOT EXISTS` does not by itself upgrade existing table definitions. Review migrations and backup/rollback behavior for every schema change.
+
+### D. How the three integrations complement each other during an incident
+
+| Question | Primary evidence | What it can establish | What it cannot establish by itself |
+|---|---|---|---|
+| What messages did a device send? | Network Syslog raw/event log | Received messages present in stored logs | Messages lost before receipt; commands not logged by the device |
+| Who logged in or issued an accounted command? | TACACS+ accounting records and audit UI | Events actually sent by the device and successfully collected | Every command on every platform; identity if the source record lacks it |
+| What configuration changed between backups? | Oxidized Git history/diff | Differences between successful configuration snapshots | Exact operator, exact command sequence or every intermediate state |
+
+For an investigation, correlate timestamps and device identity across all three sources. Check clock/time-zone alignment and whether the Syslog source IP, TACACS device mapping and Oxidized node address refer to the same device. Preserve raw records and redact secrets before sharing evidence. Treat correlation as supporting evidence, not automatic proof of causation.
+
+### E. Required validation checklist before calling a feature complete
+
+- **Oxidized:** test a real lab node; confirm SSH/model behavior, manual backup request, scheduled backup, Git commit, config diff and failure logging.
+- **Network Syslog:** send a fresh test message; verify both files, discovery JSON, agent key, LLD result, UI read permissions, rotation and behavior for a stale directory.
+- **TACACS+:** parser-validate generated config; test allowed and denied commands on each target vendor; verify default-deny/fallback behavior; confirm raw accounting records, collector restart/rotation handling, DB rows, UI filters and CSV access.
+- Record OS/Zabbix/PHP/Ruby/tac_plus versions, exact commands, observed results and date. Keep static checks separate from unit tests and live VM/device tests.
+
 ## 6. Secrets and safety rules
 
 Never commit any of the following:
