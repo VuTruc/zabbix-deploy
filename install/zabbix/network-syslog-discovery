@@ -1,0 +1,37 @@
+#!/bin/bash
+
+BASE="/var/log/network"
+
+printf '{"data":['
+
+first=1
+
+if [ -d "$BASE" ]; then
+
+    while IFS= read -r ip; do
+
+        if [[ "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+
+            if [ "$first" -eq 0 ]; then
+                printf ','
+            fi
+
+            printf '{"{#SYSLOG_IP}":"%s"}' "$ip"
+
+            first=0
+        fi
+
+    done < <(
+        find "$BASE" \
+            -mindepth 1 \
+            -maxdepth 1 \
+            -type d \
+            -printf '%f\n' \
+            2>/dev/null |
+        sort
+    )
+
+fi
+
+printf ']}'
+printf '\n'
