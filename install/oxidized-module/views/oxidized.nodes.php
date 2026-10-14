@@ -39,6 +39,40 @@ else {
     $node_interval_days = '1';
 }
 
+$node_models = [
+    'fortigate' => _('FortiGate'),
+    'ios' => _('Cisco IOS/IOS-XE'),
+    'ciscosmb' => _('Cisco SMB'),
+    'nxos' => _('Cisco NX-OS'),
+    'junos' => _('Juniper Junos')
+];
+
+// Keep a model saved outside the list selectable so editing does not change it.
+if ($node_model !== '' && !array_key_exists($node_model, $node_models)) {
+    $node_models[$node_model] = $node_model;
+}
+
+$node_model_select = (new CSelect('node_model'))
+    ->setFocusableElementId('label-node_model')
+    ->setValue($node_model !== '' ? $node_model : 'fortigate')
+    ->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH);
+
+foreach ($node_models as $model_value => $model_label) {
+    $node_model_select->addOption(
+        new CSelectOption($model_value, $model_label)
+    );
+}
+
+$node_model_help = (new CDiv([
+    new CSpan(
+        _('Suggestion: FortiGate: Fortinet FortiGate firewall. Cisco IOS/IOS-XE: Cisco routers and switches. Cisco SMB: Cisco Small Business switches.')
+    ),
+    new CTag('br'),
+    new CSpan(
+        _('Cisco NX-OS: Cisco Nexus switches. Juniper Junos: Juniper devices.')
+    )
+]))->addClass('oxidized-model-help');
+
 $node_form = (new CForm(
     'post',
     $action_url
@@ -74,27 +108,11 @@ $node_form_list = (new CFormList(
     ->addRow(
         (new CLabel(
             _('Model'),
-            'node_model'
+            'label-node_model'
         ))->setAsteriskMark(),
         new CFormField([
-            (new CTextBox(
-                'node_model',
-                $node_model
-            ))
-                ->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
-                ->setAttribute(
-                    'placeholder',
-                    'fortigate'
-                )
-                ->setAriaRequired(),
-
-            new CTag(
-                'div',
-                true,
-                _(
-                    'Suggestion: fortigate = FortiGate; ios = Cisco IOS/IOS-XE; ciscosmb = Cisco SMB; nxos = Cisco NX-OS; junos = Juniper Junos'
-                )
-            )
+            $node_model_select,
+            $node_model_help
         ])
     )
     ->addRow(
