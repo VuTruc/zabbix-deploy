@@ -237,6 +237,66 @@ for relative_path in "${MODULE_FILES[@]}"; do
         "$source_file" "$MODULE_DIR/$relative_path"
 done
 
+log "Registering and enabling the TACACS+ frontend module..."
+for cmd in curl jq; do
+    command -v "$cmd" >/dev/null 2>&1 || die "Required command not found: $cmd"
+done
+
+ZABBIX_URL="${ZABBIX_URL:-http://127.0.0.1:8000/zabbix}"
+ZABBIX_USERNAME="${ZABBIX_USERNAME:-Admin}"
+ZABBIX_PASSWORD="${ZABBIX_PASSWORD:-zabbix}"
+API_URL="${ZABBIX_URL%/}/api_jsonrpc.php"
+ZABBIX_AUTH=""
+
+zabbix_api() {
+    jq -cn \
+        --arg method "$1" \
+        --argjson params "$2" \
+        --arg auth "$ZABBIX_AUTH" \
+        '{jsonrpc:"2.0", method:$method, params:$params, id:1}
+         + (if $auth == "" then {} else {auth:$auth} end)' \
+        | curl -fsS -H 'Content-Type: application/json-rpc' -X POST "$API_URL" --data-binary @-
+}
+
+LOGIN_RESPONSE="$(zabbix_api user.login "$(jq -cn \
+    --arg u "$ZABBIX_USERNAME" --arg p "$ZABBIX_PASSWORD" '{username:$u, password:$p}')")" \
+    || die "Cannot reach Zabbix API at $API_URL."
+ZABBIX_AUTH="$(jq -r '.result // empty' <<<"$LOGIN_RESPONSE")"
+[[ -n "$ZABBIX_AUTH" ]] \
+    || die "Zabbix API login failed for '$ZABBIX_USERNAME'. Set ZABBIX_USERNAME/ZABBIX_PASSWORD and rerun."
+
+MODULE_GET_PARAMS='{"output":["moduleid","id","relative_path","status"],"filter":{"id":"tacacs"}}'
+MODULE_RESPONSE="$(zabbix_api module.get "$MODULE_GET_PARAMS")" \
+    || die "Could not query the TACACS+ module."
+jq -e '.error' >/dev/null <<<"$MODULE_RESPONSE" \
+    && die "Could not query the TACACS+ module: $(jq -c '.error' <<<"$MODULE_RESPONSE")"
+TACACS_MODULE_ID="$(jq -r '.result[0].moduleid // empty' <<<"$MODULE_RESPONSE")"
+
+if [[ -z "$TACACS_MODULE_ID" ]]; then
+    MODULE_RESPONSE="$(zabbix_api module.create \
+        '{"id":"tacacs","relative_path":"modules/Tacacs","status":1}')" \
+        || die "Could not create the TACACS+ module."
+    jq -e '.result.moduleids[0]' >/dev/null <<<"$MODULE_RESPONSE" \
+        || die "Could not create the TACACS+ module: $(jq -c '.error' <<<"$MODULE_RESPONSE")"
+    log "[OK] TACACS+ module registered."
+else
+    TACACS_RELATIVE_PATH="$(jq -r '.result[0].relative_path // empty' <<<"$MODULE_RESPONSE")"
+    [[ "$TACACS_RELATIVE_PATH" == "modules/Tacacs" ]] \
+        || die "Existing TACACS+ module has unexpected relative path: $TACACS_RELATIVE_PATH"
+    MODULE_RESPONSE="$(zabbix_api module.update "$(jq -cn \
+        --arg moduleid "$TACACS_MODULE_ID" '{moduleid:$moduleid, status:1}')")" \
+        || die "Could not enable the TACACS+ module."
+    jq -e '.error' >/dev/null <<<"$MODULE_RESPONSE" \
+        && die "Could not enable the TACACS+ module: $(jq -c '.error' <<<"$MODULE_RESPONSE")"
+fi
+
+MODULE_RESPONSE="$(zabbix_api module.get "$MODULE_GET_PARAMS")" \
+    || die "Could not verify the TACACS+ module."
+[[ "$(jq -r '.result[0].status // empty' <<<"$MODULE_RESPONSE")" == "1" ]] \
+    || die "TACACS+ module is not enabled after registration."
+log "[OK] TACACS+ module is enabled (modules/Tacacs)."
+zabbix_api user.logout '[]' >/dev/null 2>&1 || true
+
 log "Installing TACACS audit collector and systemd units..."
 install -d -o root -g root -m 0750 /var/log/tacacs
 install -D -o root -g root -m 0750 \
@@ -333,7 +393,7 @@ echo "DB file:  $DB_CONFIG was not modified."
 echo "Service:  current service state was not changed."
 echo
 echo "Next steps:"
-echo "1. Verify the TACACS+ module is enabled in the Zabbix frontend."
+echo "1. Open Zabbix > TACACS+ (the frontend module was enabled by this installer)."
 echo "2. Test TACACS+ authentication with a test account and device."
 echo "3. Verify /var/log/tacacs/accounting.log receives device accounting records."
 echo "4. Audit collector timer is enabled automatically when systemd is available; device accounting must still be configured."
