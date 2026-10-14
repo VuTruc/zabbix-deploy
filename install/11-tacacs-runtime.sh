@@ -74,7 +74,8 @@ db_config_works() {
     ' "$DB_CONFIG" 2>/dev/null
 }
 
-install -d -o root -g "$FRONTEND_GROUP" -m 0750 /etc/tacacs
+# Create only when missing: an existing directory may carry site-specific ACLs.
+[[ -d /etc/tacacs ]] || install -d -o root -g "$FRONTEND_GROUP" -m 0750 /etc/tacacs
 
 if db_config_works; then
     log "Existing $DB_CONFIG works; keeping the current database and credentials."
@@ -136,7 +137,7 @@ fi
 # ------------------------------------------------------------
 # 3. Accounting log directory and initial (empty) tac_plus.conf
 # ------------------------------------------------------------
-install -d -o root -g root -m 0750 "$ACCOUNTING_DIR"
+[[ -d "$ACCOUNTING_DIR" ]] || install -d -o root -g root -m 0750 "$ACCOUNTING_DIR"
 
 CREATED_CONFIG=0
 if [[ -f "$TACACS_CONFIG" ]]; then
