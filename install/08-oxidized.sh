@@ -458,6 +458,14 @@ models:
   eos:
     vars:
       auth_methods: [password, keyboard-interactive]
+  # Fortinet re-encrypts secrets on every export; hide them so
+  # unchanged configs do not create new versions.
+  fortigate:
+    vars:
+      remove_secret: true
+  fortios:
+    vars:
+      remove_secret: true
 EOF
 
 # ============================================================
@@ -720,6 +728,18 @@ model_auth = {
         "  eos:\n"
         "    vars:\n"
         "      auth_methods: [password, keyboard-interactive]\n"
+    ),
+    "fortigate": (
+        "  # Fortinet re-encrypts secrets on every export; hide them so\n"
+        "  # unchanged configs do not create new versions.\n"
+        "  fortigate:\n"
+        "    vars:\n"
+        "      remove_secret: true\n"
+    ),
+    "fortios": (
+        "  fortios:\n"
+        "    vars:\n"
+        "      remove_secret: true\n"
     ),
 }
 
