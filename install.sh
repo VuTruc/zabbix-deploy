@@ -98,8 +98,31 @@ done
 echo "[10/11] Network Syslog Integration"
 bash "$SCRIPT_DIR/install/10-network-syslog.sh"
 
-echo "[11/11] TACACS+ Integration"
-bash "$SCRIPT_DIR/install/11-tacacs.sh"
+echo "[11/11] TACACS+ Integration (optional)"
+
+# INSTALL_TACACS=yes|no can be set in the environment for unattended runs.
+INSTALL_TACACS="${INSTALL_TACACS:-}"
+while [[ "$INSTALL_TACACS" != "yes" && "$INSTALL_TACACS" != "no" ]]; do
+    echo
+    echo "TACACS+ adds the tac_plus daemon (TCP/49), its own database and the"
+    echo "Zabbix TACACS+ module. After installation there are no TACACS users,"
+    echo "devices, policies or assignments; add them in Zabbix > TACACS+."
+    read -r -p "Install TACACS+? [y/N]: " answer
+    case "${answer,,}" in
+        y|yes) INSTALL_TACACS="yes" ;;
+        ""|n|no) INSTALL_TACACS="no" ;;
+        *) echo "Please answer y or n." ;;
+    esac
+done
+
+if [[ "$INSTALL_TACACS" == "yes" ]]; then
+    bash "$SCRIPT_DIR/install/11-tacacs-runtime.sh"
+    bash "$SCRIPT_DIR/install/11-tacacs.sh"
+    # Generate tac_plus.conf from the (empty) TACACS database once.
+    /usr/local/sbin/tacacs-apply-config
+else
+    echo "[SKIP] TACACS+ was not selected."
+fi
 
 echo
 echo "=============================================="

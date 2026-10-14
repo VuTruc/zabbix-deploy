@@ -38,7 +38,7 @@ Run the top-level `install.sh` as root. It currently performs these steps in thi
 | 8 | `install/08-oxidized.sh` | Oxidized, service, web proxy, config repository and per-node scheduler |
 | 9 | `install/09-telegram.sh` | Telegram credential setup, API/media type/action configuration |
 | 10 | `install/10-network-syslog.sh` | Zabbix API configuration for Syslog discovery and frontend integration |
-| 11 | `install/11-tacacs.sh` | Deploy TACACS+ Zabbix module/migrations/audit collector when prerequisites exist; otherwise skip |
+| 11 | `install/11-tacacs-runtime.sh` + `install/11-tacacs.sh` | **Optional, asked interactively** (`Install TACACS+? [y/N]`, or `INSTALL_TACACS=yes|no`). On yes: install `tac_plus` from Oracle Linux EPEL (`tacacs`, `tacacs-extra`), create the TACACS DB/user (password prompted), write `/etc/tacacs/tacacs-db.conf`, create an empty `/etc/tac_plus.conf`, open TCP/49, enable `tac_plus`; then deploy schema/migrations/module/apply service/audit collector and generate the config from the empty DB. No users, devices, policies or assignments are created.
 
 The entry point disables SELinux (runtime and boot configuration) before running the numbered steps. This is a significant security-impacting behavior. Do not silently expand or further weaken it; discuss whether to replace it with proper SELinux policy before changing it.
 
@@ -151,7 +151,14 @@ Do not commit device passwords, SSH secrets or real router inventory credentials
 
 ### 5.6 TACACS+
 
-TACACS+ is an optional integration, not a prerequisite for the base monitoring server. `install/11-tacacs.sh` skips the deployment if the runtime/configuration prerequisites are not ready. It expects at least:
+TACACS+ is an optional integration, not a prerequisite for the base monitoring server. `install.sh` asks whether to install it. Answering yes runs `install/11-tacacs-runtime.sh` (since 14/10/2026), which prepares the runtime on a fresh Oracle Linux 9 host:
+
+- `dnf install oracle-epel-release-el9`, then `tacacs` and `tacacs-extra` (provides `/usr/sbin/tac_plus` F4.0.4.28 and `tac_plus.service`; same packages as the dev host Test2).
+- Database `tacacs` and user `tacacs`@`localhost` (override with `TACACS_DB_NAME`/`TACACS_DB_USER`). The password is prompted twice, hidden; ≥ 12 characters, no `"` `\` `$` or spaces (it is stored in an INI file). SQL is sent via stdin, never on the command line.
+- `/etc/tacacs/tacacs-db.conf` (`0640 root:<php-fpm group>`), `/var/log/tacacs/`, an initial empty `/etc/tac_plus.conf` (validated with `tac_plus -P`), firewalld TCP/49 when firewalld runs, `systemctl enable --now tac_plus`.
+- Re-run safety: a working `tacacs-db.conf` and an existing `tac_plus.conf` are kept (no prompt, no overwrite).
+
+After installation the TACACS data is empty; administrators add devices, users, policies and assignments in Zabbix > TACACS+ (the Assignments page asks to set its own page password on first use). `install/11-tacacs.sh` can still be run alone; it skips if the runtime prerequisites are not ready. It expects at least:
 
 - `/usr/sbin/tac_plus`
 - Readable `/etc/tacacs/tacacs-db.conf`
