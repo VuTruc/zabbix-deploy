@@ -447,6 +447,13 @@ source:
 
 model_map:
   cisco: ios
+
+# Cisco SMB (SG350/CBS/C1300) log in via an in-band "User Name:" prompt,
+# which needs the SSH "none" auth method.
+models:
+  ciscosmb:
+    vars:
+      auth_methods: [none, password]
 EOF
 
 # ============================================================
@@ -503,6 +510,24 @@ RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
+EOF
+
+# EL9 DEFAULT crypto policy rejects SHA1 signatures, which breaks SSH to
+# devices that only offer ssh-rsa host keys (older Cisco SMB firmware).
+# Allow SHA1 for the Oxidized process only; the system policy is unchanged.
+install -d -m 0755 /etc/oxidized /etc/systemd/system/oxidized.service.d
+
+cat > /etc/oxidized/openssl-sha1.cnf <<'EOF'
+# Oxidized only: allow SHA1 signatures (ssh-rsa host keys on older
+# Cisco SMB firmware). The system crypto policy is left unchanged.
+.include /etc/pki/tls/openssl.cnf
+[evp_properties]
+rh-allow-sha1-signatures = yes
+EOF
+
+cat > /etc/systemd/system/oxidized.service.d/openssl-sha1.conf <<'EOF'
+[Service]
+Environment=OPENSSL_CONF=/etc/oxidized/openssl-sha1.cnf
 EOF
 
 # ============================================================
@@ -673,6 +698,18 @@ elif re.search(r'^vars:\s*$', text, re.MULTILINE):
     )
 else:
     raise SystemExit("ERROR: Oxidized vars section not found.")
+
+# Cisco SMB needs the "none" auth method; scope it to the ciscosmb model.
+if not re.search(r'^models:\s*$', text, re.MULTILINE):
+    text = text.rstrip("\n") + (
+        "\n\n"
+        "# Cisco SMB (SG350/CBS/C1300) log in via an in-band \"User Name:\" prompt,\n"
+        "# which needs the SSH \"none\" auth method.\n"
+        "models:\n"
+        "  ciscosmb:\n"
+        "    vars:\n"
+        "      auth_methods: [none, password]\n"
+    )
 
 path.write_text(text, encoding="utf-8")
 PY

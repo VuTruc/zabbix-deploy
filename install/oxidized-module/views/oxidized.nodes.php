@@ -90,7 +90,7 @@ $node_form_list = (new CFormList(
                 'div',
                 true,
                 _(
-                    'Suggestion: fortigate = FortiGate; ios = Cisco IOS/IOS-XE; nxos = Cisco NX-OS; junos = Juniper Junos'
+                    'Suggestion: fortigate = FortiGate; ios = Cisco IOS/IOS-XE; ciscosmb = Cisco SMB; nxos = Cisco NX-OS; junos = Juniper Junos'
                 )
             )
         ])
