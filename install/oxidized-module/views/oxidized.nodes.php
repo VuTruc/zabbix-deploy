@@ -41,10 +41,25 @@ else {
 
 $node_models = [
     'fortigate' => _('FortiGate'),
+    'fortios' => _('Fortinet FortiOS (FortiManager/FortiAnalyzer)'),
     'ios' => _('Cisco IOS/IOS-XE'),
-    'ciscosmb' => _('Cisco SMB'),
+    'iosxr' => _('Cisco IOS-XR'),
     'nxos' => _('Cisco NX-OS'),
-    'junos' => _('Juniper Junos')
+    'ciscosmb' => _('Cisco SMB'),
+    'asa' => _('Cisco ASA'),
+    'aireos' => _('Cisco AireOS (WLC)'),
+    'junos' => _('Juniper Junos'),
+    'panos' => _('Palo Alto PAN-OS'),
+    'gaiaos' => _('Check Point Gaia'),
+    'sonicos' => _('SonicWall SonicOS'),
+    'aoscx' => _('Aruba AOS-CX'),
+    'procurve' => _('HP ProCurve'),
+    'comware' => _('HP/H3C Comware'),
+    'h3c' => _('H3C'),
+    'vrp' => _('Huawei VRP'),
+    'eos' => _('Arista EOS'),
+    'routeros' => _('MikroTik RouterOS'),
+    'os10' => _('Dell OS10')
 ];
 
 // Keep a model saved outside the list selectable so editing does not change it.

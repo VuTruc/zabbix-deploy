@@ -454,6 +454,10 @@ models:
   ciscosmb:
     vars:
       auth_methods: [none, password]
+  # Arista EOS requires keyboard-interactive SSH authentication.
+  eos:
+    vars:
+      auth_methods: [password, keyboard-interactive]
 EOF
 
 # ============================================================
@@ -699,17 +703,35 @@ elif re.search(r'^vars:\s*$', text, re.MULTILINE):
 else:
     raise SystemExit("ERROR: Oxidized vars section not found.")
 
-# Cisco SMB needs the "none" auth method; scope it to the ciscosmb model.
+# Per-model SSH auth methods: Cisco SMB needs "none", Arista EOS needs
+# "keyboard-interactive". Add only the entries that are missing.
 if not re.search(r'^models:\s*$', text, re.MULTILINE):
-    text = text.rstrip("\n") + (
-        "\n\n"
-        "# Cisco SMB (SG350/CBS/C1300) log in via an in-band \"User Name:\" prompt,\n"
-        "# which needs the SSH \"none\" auth method.\n"
-        "models:\n"
+    text = text.rstrip("\n") + "\n\nmodels:\n"
+
+model_auth = {
+    "ciscosmb": (
+        "  # Cisco SMB log in via an in-band \"User Name:\" prompt.\n"
         "  ciscosmb:\n"
         "    vars:\n"
         "      auth_methods: [none, password]\n"
-    )
+    ),
+    "eos": (
+        "  # Arista EOS requires keyboard-interactive SSH authentication.\n"
+        "  eos:\n"
+        "    vars:\n"
+        "      auth_methods: [password, keyboard-interactive]\n"
+    ),
+}
+
+for model, block in model_auth.items():
+    if not re.search(rf'^  {model}:\s*$', text, re.MULTILINE):
+        text = re.sub(
+            r'^models:\s*\n',
+            lambda m: 'models:\n' + block,
+            text,
+            count=1,
+            flags=re.MULTILINE
+        )
 
 path.write_text(text, encoding="utf-8")
 PY
