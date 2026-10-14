@@ -63,16 +63,6 @@ foreach ($node_models as $model_value => $model_label) {
     );
 }
 
-$node_model_help = (new CDiv([
-    new CSpan(
-        _('Suggestion: FortiGate: Fortinet FortiGate firewall. Cisco IOS/IOS-XE: Cisco routers and switches. Cisco SMB: Cisco Small Business switches.')
-    ),
-    new CTag('br'),
-    new CSpan(
-        _('Cisco NX-OS: Cisco Nexus switches. Juniper Junos: Juniper devices.')
-    )
-]))->addClass('oxidized-model-help');
-
 $node_form = (new CForm(
     'post',
     $action_url
@@ -110,10 +100,7 @@ $node_form_list = (new CFormList(
             _('Model'),
             'label-node_model'
         ))->setAsteriskMark(),
-        new CFormField([
-            $node_model_select,
-            $node_model_help
-        ])
+        new CFormField($node_model_select)
     )
     ->addRow(
         (new CLabel(
