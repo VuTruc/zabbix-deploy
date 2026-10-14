@@ -111,16 +111,17 @@ echo
 echo "Current hostname: ${CURRENT_HOSTNAME}"
 
 echo
-read -r -p "Enter new hostname [${CURRENT_HOSTNAME}]: " HOSTNAME_VALUE
+while true; do
+    read -r -p "Enter new hostname [${CURRENT_HOSTNAME}]: " HOSTNAME_VALUE
+    HOSTNAME_VALUE="${HOSTNAME_VALUE:-$CURRENT_HOSTNAME}"
 
-HOSTNAME_VALUE="${HOSTNAME_VALUE:-$CURRENT_HOSTNAME}"
+    if [[ "$HOSTNAME_VALUE" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]]; then
+        break
+    fi
 
-if ! [[ "$HOSTNAME_VALUE" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]]; then
-    echo
-    echo "ERROR: Invalid hostname:"
-    echo "       ${HOSTNAME_VALUE}"
-    exit 1
-fi
+    echo "ERROR: Invalid hostname: ${HOSTNAME_VALUE}"
+    echo "       Use letters, digits, '.' and '-' (must start with a letter or digit). Please try again."
+done
 
 echo
 echo "[System Preparation] Setting hostname..."

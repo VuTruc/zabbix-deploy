@@ -208,23 +208,21 @@ if [ -z "${DB_PASSWORD:-}" ]; then
     echo " Zabbix Database Configuration"
     echo "=============================================="
 
-    echo
-    read -r -s -p "Enter Zabbix database password: " DB_PASSWORD
-    echo
-
-    read -r -s -p "Confirm Zabbix database password: " DB_PASSWORD_CONFIRM
-    echo
-
-    if [ "$DB_PASSWORD" != "$DB_PASSWORD_CONFIRM" ]; then
-
-        unset DB_PASSWORD_CONFIRM
-
+    while true; do
         echo
-        echo "ERROR: Passwords do not match."
+        read -r -s -p "Enter Zabbix database password: " DB_PASSWORD
+        echo
+        read -r -s -p "Confirm Zabbix database password: " DB_PASSWORD_CONFIRM
+        echo
 
-        exit 1
-
-    fi
+        if [ -z "$DB_PASSWORD" ]; then
+            echo "ERROR: Database password cannot be empty. Please try again."
+        elif [ "$DB_PASSWORD" != "$DB_PASSWORD_CONFIRM" ]; then
+            echo "ERROR: Passwords do not match. Please try again."
+        else
+            break
+        fi
+    done
 
     unset DB_PASSWORD_CONFIRM
 

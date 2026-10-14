@@ -515,18 +515,18 @@ else
     echo "The installer will always ask for new Telegram credentials."
     echo
 
-    read -rsp "Enter Telegram Bot Token: " TELEGRAM_BOT_TOKEN
-    echo
+    while true; do
+        read -rsp "Enter Telegram Bot Token: " TELEGRAM_BOT_TOKEN
+        echo
+        [ -n "$TELEGRAM_BOT_TOKEN" ] && break
+        warning "Telegram Bot Token cannot be empty. Please try again."
+    done
 
-    if [ -z "$TELEGRAM_BOT_TOKEN" ]; then
-        die "ERROR: Telegram Bot Token cannot be empty."
-    fi
-
-    read -rp "Enter Telegram Chat/Room ID: " TELEGRAM_CHAT_ID
-
-    if [ -z "$TELEGRAM_CHAT_ID" ]; then
-        die "ERROR: Telegram Chat/Room ID cannot be empty."
-    fi
+    while true; do
+        read -rp "Enter Telegram Chat/Room ID: " TELEGRAM_CHAT_ID
+        [ -n "$TELEGRAM_CHAT_ID" ] && break
+        warning "Telegram Chat/Room ID cannot be empty. Please try again."
+    done
 
     echo
 
@@ -1290,12 +1290,12 @@ if [ -z "$TELEGRAM_DISPLAY_NAME" ]; then
     TELEGRAM_DISPLAY_NAME="$TELEGRAM_NAME_DEFAULT"
 fi
 
-read -rsp "Telegram notification user password: " TELEGRAM_USER_PASSWORD
-echo
-
-if [ -z "$TELEGRAM_USER_PASSWORD" ]; then
-    die "ERROR: Telegram notification user password cannot be empty."
-fi
+while true; do
+    read -rsp "Telegram notification user password: " TELEGRAM_USER_PASSWORD
+    echo
+    [ -n "$TELEGRAM_USER_PASSWORD" ] && break
+    warning "Telegram notification user password cannot be empty. Please try again."
+done
 
 # ============================================================
 # Find Telegram user

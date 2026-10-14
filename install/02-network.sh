@@ -25,23 +25,16 @@ echo
 # Ask whether to configure static IP
 # -------------------------------------------------
 
-read -r -p "Do you want to configure a static IP address? [y/N]: " CONFIGURE_IP
+while true; do
+    read -r -p "Do you want to configure a static IP address? [y/N]: " CONFIGURE_IP
+    CONFIGURE_IP=${CONFIGURE_IP:-N}
 
-CONFIGURE_IP=${CONFIGURE_IP:-N}
-
-case "$CONFIGURE_IP" in
-    y|Y)
-        CONFIGURE_IP="Y"
-        ;;
-    n|N)
-        CONFIGURE_IP="N"
-        ;;
-    *)
-        echo "[ERROR] Invalid answer."
-        echo "Please enter Y or N."
-        exit 1
-        ;;
-esac
+    case "$CONFIGURE_IP" in
+        y|Y) CONFIGURE_IP="Y"; break ;;
+        n|N) CONFIGURE_IP="N"; break ;;
+        *)   echo "[ERROR] Invalid answer. Please enter Y or N." ;;
+    esac
+done
 
 # -------------------------------------------------
 # Skip network configuration
@@ -75,14 +68,34 @@ else
     echo "=============================================="
     echo
 
-    read -r -p "IP address [${CURRENT_IP:-192.168.18.57/24}]: " IP_ADDRESS
-    IP_ADDRESS=${IP_ADDRESS:-${CURRENT_IP:-192.168.18.57/24}}
+    IPV4_RE='^((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])$'
 
-    read -r -p "Gateway [${CURRENT_GATEWAY:-192.168.18.1}]: " GATEWAY
-    GATEWAY=${GATEWAY:-${CURRENT_GATEWAY:-192.168.18.1}}
+    while true; do
+        read -r -p "IP address [${CURRENT_IP:-192.168.18.57/24}]: " IP_ADDRESS
+        IP_ADDRESS=${IP_ADDRESS:-${CURRENT_IP:-192.168.18.57/24}}
+        prefix="${IP_ADDRESS#*/}"
+        if [[ "$IP_ADDRESS" == */* && "${IP_ADDRESS%/*}" =~ $IPV4_RE \
+              && "$prefix" =~ ^[0-9]+$ && "$prefix" -ge 1 && "$prefix" -le 32 ]]; then
+            break
+        fi
+        echo "[ERROR] Enter an IPv4 address with prefix, e.g. 192.168.18.57/24. Please try again."
+    done
 
-    read -r -p "DNS [${CURRENT_DNS:-8.8.8.8}]: " DNS
-    DNS=${DNS:-${CURRENT_DNS:-8.8.8.8}}
+    while true; do
+        read -r -p "Gateway [${CURRENT_GATEWAY:-192.168.18.1}]: " GATEWAY
+        GATEWAY=${GATEWAY:-${CURRENT_GATEWAY:-192.168.18.1}}
+        [[ "$GATEWAY" =~ $IPV4_RE ]] && break
+        echo "[ERROR] Enter a valid IPv4 gateway, e.g. 192.168.18.1. Please try again."
+    done
+
+    while true; do
+        read -r -p "DNS [${CURRENT_DNS:-8.8.8.8}]: " DNS
+        DNS=${DNS:-${CURRENT_DNS:-8.8.8.8}}
+        dns_ok=1
+        for d in ${DNS//,/ }; do [[ "$d" =~ $IPV4_RE ]] || dns_ok=0; done
+        [[ $dns_ok -eq 1 && -n "${DNS// /}" ]] && break
+        echo "[ERROR] Enter one or more IPv4 DNS servers (comma or space separated). Please try again."
+    done
 
     echo
     echo "=============================================="
