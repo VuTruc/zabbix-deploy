@@ -9,8 +9,10 @@ use CController,
     CUrl;
 
 use Modules\Tacacs\Db;
+use Modules\Tacacs\ApplyQueue;
 
 require_once dirname(__DIR__).'/include/Db.php';
+require_once dirname(__DIR__).'/include/ApplyQueue.php';
 
 class TacacsPolicies extends CController {
 
@@ -55,6 +57,10 @@ class TacacsPolicies extends CController {
     }
 
     private function redirect(): void {
+        // Every redirect in this controller follows a committed DB change:
+        // ask the root apply service to regenerate tac_plus.conf.
+        ApplyQueue::request('policies changed');
+
         $url = (new CUrl('zabbix.php'))
             ->setArgument('action', 'tacacs.policies');
 

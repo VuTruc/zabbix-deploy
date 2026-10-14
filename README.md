@@ -158,7 +158,7 @@ TACACS+ is an optional integration, not a prerequisite for the base monitoring s
 - `/etc/tac_plus.conf`
 - PHP with PDO and `pdo_mysql`
 
-The script validates the TACACS+ config with `tac_plus -P`, verifies/creates missing database tables using the schema's non-destructive `CREATE TABLE IF NOT EXISTS` statements, runs migrations and PHP tests, deploys the Zabbix module, and enables the audit collector timer when systemd is available. It intentionally does **not** overwrite `/etc/tac_plus.conf`, `/etc/tacacs/tacacs-db.conf`, or force the TACACS+ daemon's service state.
+The script validates the TACACS+ config with `tac_plus -P`, verifies/creates missing database tables using the schema's non-destructive `CREATE TABLE IF NOT EXISTS` statements, runs migrations and PHP tests, deploys the Zabbix module, installs the config generator (`/usr/local/bin/tacacs-config-generator`) and the apply service, and enables the audit collector timer and `tacacs-config-apply.path` when systemd is available. Module backups are written to `/var/backups/zabbix-modules/` (never inside `/usr/share/zabbix/modules`, where Zabbix would see duplicate module IDs). The installer itself intentionally does **not** overwrite `/etc/tac_plus.conf`, `/etc/tacacs/tacacs-db.conf`, or force the TACACS+ daemon's service state.
 
 TACACS+ module ID: `tacacs`. Frontend actions include:
 
@@ -173,7 +173,8 @@ TACACS+ module ID: `tacacs`. Frontend actions include:
 Key files:
 
 - Schema: `install/tacacs/schema.sql`
-- Config generator: `install/tacacs/tacacs-config-generator.php`
+- Config generator: `install/tacacs/tacacs-config-generator.php` (installed as `/usr/local/bin/tacacs-config-generator`)
+- Apply service: `install/tacacs/tacacs-apply-config` (installed as `/usr/local/sbin/tacacs-apply-config`) with `install/tacacs/systemd/tacacs-config-apply.{path,service}`; frontend side: `install/tacacs-module/include/ApplyQueue.php`
 - Accounting/audit collector: `install/tacacs/tacacs-audit-collector.php`
 - Collector units: `install/tacacs/systemd/`
 - Logrotate config: `install/tacacs/tacacs-audit-logrotate.conf`
@@ -347,6 +348,7 @@ Main source files:
 3. Policy rules are ordered command/argument match rules with an action such as `permit` or `deny`. Matching behavior, rule precedence, default behavior and device-specific syntax are security-critical; verify them in the generator and tests instead of inferring from UI labels.
 4. The config generator reads the DB and produces TACACS daemon configuration, including user/group/policy mappings and device/NAS restrictions as implemented by the current source.
 5. It validates a temporary generated file using `tac_plus -C <temporary-file> -P`. Only a parser-valid file should replace the generated target. Parser success proves syntax acceptance, not that every policy will behave as intended on a live device.
+   **Applying UI changes (since 14/10/2026):** every committed change on the Users, Devices, Policies/Rules and Assignments pages calls `ApplyQueue::request()`, which rewrites `/var/lib/tacacs-apply/request` (the only file the PHP-FPM user can write; directory `root:apache 0750`, file `0660`). `tacacs-config-apply.path` (root) notices the change and runs `tacacs-apply-config`, which: waits 2 s to batch bursts, keeps a copy of the running config, runs the generator (parser-validated, atomic replace), restarts `tac_plus` only if the config changed, restores the previous config if the restart fails, and writes `/var/lib/tacacs-apply/status.json` (no keys/hashes). Each TACACS page shows the result in a "TACACS+ apply" banner (applied / pending / stuck > 90 s / failed / not installed). Before this mechanism existed, UI changes only reached the database and `tac_plus` kept serving the old config — the cause of "deleted assignment still logs in with full access". Manual run: `sudo /usr/local/sbin/tacacs-apply-config`. Note: `tac_plus -P` prints the whole config including keys and hashes; scripts capture its output and only show redacted lines on failure.
 6. The network administrator manually configures each device to use the server for AAA. The installer/module does not automatically configure Cisco, FortiGate or other device CLI settings.
 7. Test a lab login, permitted commands, denied commands, fallback behavior and accounting before production use.
 
@@ -462,14 +464,15 @@ Use a disposable Oracle Linux 9 VM with a snapshot and working Internet/DNS:
 These are investigation items, not claims that every one is a confirmed runtime defect:
 
 1. **Clean-install verification:** No end-to-end install has yet been confirmed for this repository's `main`.
-2. **Telegram export environment:** `install/09-telegram.sh` references `/etc/zabbix/zabbix-export.env`; find its creator/contract and confirm it exists on a clean install.
+2. **Telegram export environment:** `install/09-telegram.sh` only *sources* `/etc/zabbix/zabbix-export.env` if it exists (optional override for `ZABBIX_URL`/API credentials); no script creates it, and its "Save Zabbix environment" section is empty (checked 14/10/2026). Without it the script falls back to `Admin`/`zabbix`, so the Telegram step loops forever if the Admin password was already changed.
 3. **Default Zabbix credentials:** `install/10-network-syslog.sh` defaults to `Admin` / `zabbix`. Check behavior if the password was changed in the previous step or the environment already has another admin credential.
 4. **SELinux:** `install.sh` disables SELinux. Decide whether this is acceptable for the intended deployment or should be replaced by correct policies/labels.
 5. **Network step recovery:** Static-IP changes may sever SSH access; validate the prompt, connection selection and rollback/recovery path.
 6. **Installer idempotency:** Verify reruns do not append duplicate Apache/PHP/Zabbix/rsyslog configuration or duplicate API objects.
-7. **TACACS+ separation:** Verify the optional TACACS+ installer remains a no-op when prerequisites are absent and does not unintentionally change an existing TACACS+ service/config.
-8. **Module compatibility:** Validate frontend module API/action/view behavior against the exact installed Zabbix 7.0 patch release, not only PHP syntax.
-9. **Public repository review:** Re-scan tracked files and commit history for secrets before publishing changes.
+7. **TACACS+ apply mechanism:** Verified 14/10/2026 on WSL `OracleLinux9.5-Test2` (OL 9.5, Zabbix 7.0.31, tac_plus F4.0.4.28) with a Cisco SG350-10MP: add assignment in UI → applied in ~3 s → SSH login works; delete assignment → applied → new SSH login rejected. Still open: (a) SG350 sent only exec start/stop accounting, no command records — check in the Cisco 350-series admin guide whether it supports TACACS+ command authorization/accounting at all; if not, policy rules cannot restrict commands on it and privilege must come from login (`priv-lvl`), which the generator does not emit yet; (b) whether an already-open SSH session is affected by revocation; (c) `window.confirm()` delete dialogs do not appear in the Claude desktop embedded browser (they work in Chrome/Edge); (d) Dashboard "Current Assignments" uses an inner join on `policies`, so Allow-All assignments are counted but not listed.
+8. **TACACS+ separation:** Verify the optional TACACS+ installer remains a no-op when prerequisites are absent and does not unintentionally change an existing TACACS+ service/config.
+9. **Module compatibility:** Validate frontend module API/action/view behavior against the exact installed Zabbix 7.0 patch release, not only PHP syntax.
+10. **Public repository review:** Re-scan tracked files and commit history for secrets before publishing changes.
 
 When a gap is resolved, update this section with the tested environment, command or procedure, observed result, and date. Do not mark a feature “tested” based only on reading its source.
 

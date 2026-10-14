@@ -1,0 +1,7 @@
+[Unit]
+Description=Regenerate /etc/tac_plus.conf from the TACACS database and restart tac_plus
+After=mariadb.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/tacacs-apply-config

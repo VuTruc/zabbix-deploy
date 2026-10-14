@@ -1,0 +1,5 @@
+* text=auto eol=lf
+*.sh text eol=lf
+*.php text eol=lf
+install/oxidized/oxidized-node-scheduler text eol=lf
+install/zabbix/network-syslog-discovery text eol=lf

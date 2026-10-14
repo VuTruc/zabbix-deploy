@@ -9,8 +9,10 @@ use CController,
     CUrl;
 
 use Modules\Tacacs\Db;
+use Modules\Tacacs\ApplyQueue;
 
 require_once dirname(__DIR__).'/include/Db.php';
+require_once dirname(__DIR__).'/include/ApplyQueue.php';
 
 class TacacsAssignments extends CController {
 
@@ -429,6 +431,7 @@ class TacacsAssignments extends CController {
 
                 $stmt = $db->prepare('DELETE FROM assignments WHERE id = :id');
                 $stmt->execute([':id' => $id]);
+                ApplyQueue::request('assignment deleted');
                 $this->redirect();
                 return;
             }
@@ -516,6 +519,7 @@ class TacacsAssignments extends CController {
                 }
 
                 if ($error === null) {
+                    ApplyQueue::request('assignment added');
                     $this->redirect();
                     return;
                 }

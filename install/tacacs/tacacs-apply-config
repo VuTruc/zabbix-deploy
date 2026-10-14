@@ -1,0 +1,89 @@
+#!/bin/bash
+# Regenerate /etc/tac_plus.conf from the TACACS database and restart tac_plus.
+# Triggered by tacacs-config-apply.path when the Zabbix TACACS module writes
+# /var/lib/tacacs-apply/request. Can also be run manually as root.
+#
+# Safety:
+#  - the generator validates with `tac_plus -P` and only then replaces the file;
+#  - the previous config is kept and restored if tac_plus fails to restart;
+#  - tac_plus is restarted only when the generated config actually changed;
+#  - nothing secret (keys, hashes, tac_plus -P output) is written to status/journal.
+set -uo pipefail
+
+APPLY_DIR="/var/lib/tacacs-apply"
+REQUEST_FILE="$APPLY_DIR/request"
+STATUS_FILE="$APPLY_DIR/status.json"
+PREVIOUS="$APPLY_DIR/tac_plus.conf.previous"
+CONFIG="/etc/tac_plus.conf"
+GENERATOR="${TACACS_GENERATOR:-/usr/local/bin/tacacs-config-generator}"
+SERVICE="${TACACS_SERVICE:-tac_plus}"
+DEBOUNCE="${TACACS_APPLY_DEBOUNCE:-2}"
+
+[[ $EUID -eq 0 ]] || { echo "[ERROR] run as root" >&2; exit 1; }
+
+exec 9>/run/tacacs-apply.lock
+flock 9
+
+request_id() {
+    php -r '$j = json_decode((string) @file_get_contents($argv[1]), true); echo is_array($j) ? ($j["id"] ?? "") : "";' "$REQUEST_FILE" 2>/dev/null
+}
+
+write_status() { # state message request_id
+    local tmp group
+    group="$(stat -c %G "$APPLY_DIR")"
+    tmp="$(mktemp "$APPLY_DIR/.status.XXXXXX")"
+    php -r 'echo json_encode(["state"=>$argv[1],"message"=>$argv[2],"request_id"=>$argv[3],"finished_at"=>time()], JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE), "\n";' \
+        "$1" "$2" "$3" > "$tmp"
+    chown root:"$group" "$tmp"; chmod 0640 "$tmp"
+    mv -f "$tmp" "$STATUS_FILE"
+    echo "[tacacs-apply] $1: $2 (request ${3:-manual})"
+}
+
+sanitize() { # keep generator messages, drop anything that could carry secrets
+    grep -viE 'key[[:space:]]*=|login[[:space:]]*=|password|secret' | tail -n 3 | tr '\n' ' ' | cut -c1-400
+}
+
+apply_once() {
+    local req out summary
+    sleep "$DEBOUNCE"               # let a burst of UI changes settle
+    req="$(request_id)"
+
+    [[ -x /usr/sbin/tac_plus && -f "$GENERATOR" ]] \
+        || { write_status failed "tac_plus or generator is missing on the server." "$req"; return 1; }
+
+    cp -a "$CONFIG" "$PREVIOUS" 2>/dev/null || true
+
+    if ! out="$(php "$GENERATOR" 2>&1)"; then
+        write_status failed "Generator refused the configuration: $(printf '%s\n' "$out" | sanitize)" "$req"
+        return 1
+    fi
+    summary="$(printf '%s\n' "$out" | grep -E '^\[OK\] (Assigned users|Devices|Policies|Rules):' | sed 's/^\[OK\] //' | paste -sd, - | sed 's/,/, /g')"
+
+    if [[ -f "$PREVIOUS" ]] && cmp -s "$PREVIOUS" "$CONFIG"; then
+        write_status ok "Configuration unchanged; tac_plus not restarted. $summary" "$req"
+        return 0
+    fi
+
+    if systemctl restart "$SERVICE" && sleep 1 && systemctl is-active --quiet "$SERVICE"; then
+        write_status ok "Applied and $SERVICE restarted. $summary" "$req"
+        return 0
+    fi
+
+    # Roll back to the last config that was running.
+    if [[ -f "$PREVIOUS" ]]; then
+        cp -a "$PREVIOUS" "$CONFIG"
+        systemctl restart "$SERVICE" || true
+    fi
+    write_status failed "$SERVICE failed to restart with the new configuration; previous configuration restored." "$req"
+    return 1
+}
+
+rc=0
+for _ in 1 2 3 4 5; do
+    before="$(request_id)"
+    apply_once || rc=1
+    # A new request may have arrived while we were applying.
+    [[ "$(request_id)" == "$before" ]] && break
+    rc=0
+done
+exit "$rc"

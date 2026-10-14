@@ -31,3 +31,4 @@ config/local/
 
 *.backup
 *.backup2
+dev/wsl/logs/

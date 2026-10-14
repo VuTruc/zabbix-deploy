@@ -2,6 +2,8 @@
 
 $this->addCssFile('modules/Tacacs/assets/tacacs.css');
 
+require_once dirname(__DIR__).'/include/ApplyQueue.php';
+
 require_once dirname(__DIR__).'/include/DeviceTypes.php';
 
 use Modules\Tacacs\DeviceTypes;
@@ -235,7 +237,8 @@ $form->addItem(
 );
 
 $html_page = (new CHtmlPage())
-        ->setTitle(_('TACACS+ Devices'));
+        ->setTitle(_('TACACS+ Devices'))
+    ->addItem(\Modules\Tacacs\ApplyQueue::statusBox());
 
 if (!empty($data['error'])) {
     $html_page->addItem(

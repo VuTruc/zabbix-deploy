@@ -1,0 +1,9 @@
+[Unit]
+Description=Watch TACACS+ apply requests from the Zabbix TACACS module
+
+[Path]
+PathModified=/var/lib/tacacs-apply/request
+Unit=tacacs-config-apply.service
+
+[Install]
+WantedBy=multi-user.target

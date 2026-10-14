@@ -1,6 +1,8 @@
 <?php
 
 $this->addCssFile('modules/Tacacs/assets/tacacs.css');
+
+require_once dirname(__DIR__).'/include/ApplyQueue.php';
 $form_action = (new CUrl('zabbix.php'))
 	->setArgument('action', 'tacacs.users');
 
@@ -84,7 +86,8 @@ else {
 }
 
 $html_page = (new CHtmlPage())
-    ->setTitle(_('TACACS+ Users'));
+    ->setTitle(_('TACACS+ Users'))
+    ->addItem(\Modules\Tacacs\ApplyQueue::statusBox());
 
 if (!empty($data['error'])) {
     $html_page->addItem(

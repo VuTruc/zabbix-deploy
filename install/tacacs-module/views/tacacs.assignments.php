@@ -1,6 +1,8 @@
 <?php
 
 $this->addCssFile('modules/Tacacs/assets/tacacs.css');
+
+require_once dirname(__DIR__).'/include/ApplyQueue.php';
 // Keep the module asset loader active; it filters this path from core jsLoader and
 // then adds the registered TACACS assets from manifest.json.
 $this->addJsFile('modules/Tacacs/assets/js/tacacs.assignments.js');
@@ -9,7 +11,8 @@ $base_url = (new CUrl('zabbix.php'))
     ->setArgument('action', 'tacacs.assignments');
 
 $html_page = (new CHtmlPage())
-    ->setTitle(_('TACACS+ Assignments'));
+    ->setTitle(_('TACACS+ Assignments'))
+    ->addItem(\Modules\Tacacs\ApplyQueue::statusBox());
 
 $displayError = !empty($data['page_locked'])
     ? ($data['page_error'] ?? null)

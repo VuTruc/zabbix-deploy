@@ -11,6 +11,8 @@ DB_CONFIG="/etc/tacacs/tacacs-db.conf"
 TACACS_CONFIG="/etc/tac_plus.conf"
 MODULE_DIR="/usr/share/zabbix/modules/Tacacs"
 BACKUP_DIR=""
+MODULE_BACKUP_ROOT="/var/backups/zabbix-modules"
+GENERATOR_TARGET="/usr/local/bin/tacacs-config-generator"
 
 log() {
     printf '[TACACS+] %s\n' "$*"
@@ -19,6 +21,18 @@ log() {
 die() {
     printf '[ERROR] %s\n' "$*" >&2
     exit 1
+}
+
+# tac_plus -P echoes the whole parsed config (shared keys, password hashes)
+# to the terminal. Capture it and only show redacted lines on failure.
+validate_tacacs_config() {
+    local output
+    if output="$(/usr/sbin/tac_plus -C "$1" -P 2>&1)"; then
+        return 0
+    fi
+    printf '%s\n' "$output" \
+        | sed -E 's/(key[[:space:]]*=[[:space:]]*).*/\1"***"/; s/(login[[:space:]]*=[[:space:]]*[a-z]+[[:space:]]+).*/\1***/' >&2
+    return 1
 }
 
 if [[ "${EUID}" -ne 0 ]]; then
@@ -39,7 +53,11 @@ for path in \
     "$REPO_DIR/install/tacacs/tests/tacacs-audit-collector-test.php" \
     "$REPO_DIR/install/tacacs/systemd/tacacs-audit-collector.service" \
     "$REPO_DIR/install/tacacs/systemd/tacacs-audit-collector.timer" \
-    "$REPO_DIR/install/tacacs/tacacs-audit-logrotate.conf"
+    "$REPO_DIR/install/tacacs/tacacs-audit-logrotate.conf" \
+    "$REPO_DIR/install/tacacs/tacacs-apply-config" \
+    "$REPO_DIR/install/tacacs/systemd/tacacs-config-apply.path" \
+    "$REPO_DIR/install/tacacs/systemd/tacacs-config-apply.service" \
+    "$SOURCE_MODULE/include/ApplyQueue.php"
 do
     [[ -f "$path" ]] || die "Required source file not found: $path"
 done
@@ -158,7 +176,7 @@ echo "[OK] Database connection successful; all required tables exist.\n";
 PHP
 
 log "Validating current TACACS+ configuration before database migrations..."
-/usr/sbin/tac_plus -C "$TACACS_CONFIG" -P \
+validate_tacacs_config "$TACACS_CONFIG" \
     || die "Current TACACS+ config validation failed. No config was changed."
 
 log "Applying TACACS assignment v2 schema migration..."
@@ -175,7 +193,10 @@ php "$REPO_DIR/install/tacacs/migrate-policy-rule-action.php" "$DB_CONFIG" \
 
 log "Backing up installed Zabbix module..."
 if [[ -d "$MODULE_DIR" ]]; then
-    BACKUP_DIR="/usr/share/zabbix/modules/Tacacs.backup-$(date +%Y%m%d-%H%M%S)"
+    # Keep backups OUTSIDE /usr/share/zabbix/modules: Zabbix scans every
+    # directory there and would find duplicate modules with the same id.
+    install -d -o root -g root -m 0700 "$MODULE_BACKUP_ROOT"
+    BACKUP_DIR="$MODULE_BACKUP_ROOT/Tacacs-$(date +%Y%m%d-%H%M%S)"
     cp -a "$MODULE_DIR" "$BACKUP_DIR"
     log "Module backup created: $BACKUP_DIR"
 else
@@ -194,6 +215,7 @@ MODULE_FILES=(
     "actions/TacacsUsers.php"
     "assets/tacacs.css"
     "assets/js/tacacs.assignments.js"
+    "include/ApplyQueue.php"
     "include/Db.php"
     "include/DeviceTypes.php"
     "manifest.json"
@@ -229,6 +251,34 @@ install -D -o root -g root -m 0644 \
 install -D -o root -g root -m 0644 \
     "$REPO_DIR/install/tacacs/tacacs-audit-logrotate.conf" \
     /etc/logrotate.d/tacacs-audit
+log "Installing TACACS config generator (not executed by this installer)..."
+if [[ -f "$GENERATOR_TARGET" ]] && ! cmp -s "$REPO_DIR/install/tacacs/tacacs-config-generator.php" "$GENERATOR_TARGET"; then
+    cp -a "$GENERATOR_TARGET" "$GENERATOR_TARGET.bak-$(date +%Y%m%d-%H%M%S)"
+    log "Previous generator backed up next to $GENERATOR_TARGET"
+fi
+install -D -o root -g root -m 0750 \
+    "$REPO_DIR/install/tacacs/tacacs-config-generator.php" \
+    "$GENERATOR_TARGET"
+log "Installing TACACS apply service (frontend changes -> tac_plus.conf)..."
+# Group of the PHP-FPM pool that runs the Zabbix frontend.
+FRONTEND_GROUP="$(awk -F= '/^[[:space:]]*group[[:space:]]*=/{gsub(/[[:space:]]/,"",$2); print $2; exit}' /etc/php-fpm.d/zabbix.conf 2>/dev/null)"
+FRONTEND_GROUP="${FRONTEND_GROUP:-apache}"
+getent group "$FRONTEND_GROUP" >/dev/null || die "Frontend group '$FRONTEND_GROUP' does not exist."
+install -D -o root -g root -m 0750 \
+    "$REPO_DIR/install/tacacs/tacacs-apply-config" /usr/local/sbin/tacacs-apply-config
+install -D -o root -g root -m 0644 \
+    "$REPO_DIR/install/tacacs/systemd/tacacs-config-apply.path" /etc/systemd/system/tacacs-config-apply.path
+install -D -o root -g root -m 0644 \
+    "$REPO_DIR/install/tacacs/systemd/tacacs-config-apply.service" /etc/systemd/system/tacacs-config-apply.service
+# Directory: frontend may read (status) but not create files.
+install -d -o root -g "$FRONTEND_GROUP" -m 0750 /var/lib/tacacs-apply
+# Request file: the only thing the frontend can write.
+if [[ ! -f /var/lib/tacacs-apply/request ]]; then
+    install -o root -g "$FRONTEND_GROUP" -m 0660 /dev/null /var/lib/tacacs-apply/request
+fi
+chown root:"$FRONTEND_GROUP" /var/lib/tacacs-apply/request
+chmod 0660 /var/lib/tacacs-apply/request
+
 if command -v systemctl >/dev/null 2>&1; then
     systemctl daemon-reload || die "Could not reload systemd unit definitions."
 fi
@@ -255,7 +305,7 @@ php "$REPO_DIR/install/tacacs/tests/tacacs-audit-collector-test.php" \
     || die "TACACS audit collector parser tests failed."
 
 log "Validating TACACS+ configuration after module deployment..."
-/usr/sbin/tac_plus -C "$TACACS_CONFIG" -P \
+validate_tacacs_config "$TACACS_CONFIG" \
     || die "TACACS+ config validation failed after module deployment."
 
 if command -v systemctl >/dev/null 2>&1; then
@@ -264,6 +314,11 @@ if command -v systemctl >/dev/null 2>&1; then
         || die "Could not enable the TACACS audit collector timer."
     systemctl is-active --quiet tacacs-audit-collector.timer \
         || die "TACACS audit collector timer is not active."
+    log "Enabling the TACACS apply watcher (tacacs-config-apply.path)..."
+    systemctl enable --now tacacs-config-apply.path \
+        || die "Could not enable tacacs-config-apply.path."
+    systemctl is-active --quiet tacacs-config-apply.path \
+        || die "tacacs-config-apply.path is not active."
 else
     log "[WARN] systemctl is unavailable; TACACS audit collection timer was not enabled."
 fi
@@ -273,7 +328,7 @@ echo "============================================================"
 echo "[OK] TACACS+ module deployment checks completed."
 echo "============================================================"
 echo "Database: existing database preserved; missing tables were added only if needed."
-echo "Config:   $TACACS_CONFIG was not modified."
+echo "Config:   $TACACS_CONFIG was not modified by the installer. Frontend changes are applied by tacacs-config-apply.path (manual: /usr/local/sbin/tacacs-apply-config)."
 echo "DB file:  $DB_CONFIG was not modified."
 echo "Service:  current service state was not changed."
 echo

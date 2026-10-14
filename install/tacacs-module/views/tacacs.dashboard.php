@@ -2,8 +2,11 @@
 
 $this->addCssFile('modules/Tacacs/assets/tacacs.css');
 
+require_once dirname(__DIR__).'/include/ApplyQueue.php';
+
 (new CHtmlPage())
     ->setTitle(_('TACACS+ Dashboard'))
+    ->addItem(\Modules\Tacacs\ApplyQueue::statusBox())
     ->addItem(
         (new CDiv([
 

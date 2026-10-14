@@ -1,6 +1,8 @@
 <?php
 
 $this->addCssFile('modules/Tacacs/assets/tacacs.css');
+
+require_once dirname(__DIR__).'/include/ApplyQueue.php';
 $this->addJsFile('modules/Tacacs/views/js/tacacs.policies.js');
 $base_url = (new CUrl('zabbix.php'))
 	->setArgument('action', 'tacacs.policies');
@@ -26,7 +28,8 @@ foreach (($data['rules'] ?? []) as $existingRule) {
 
 
 $html_page = (new CHtmlPage())
-    ->setTitle(_('TACACS+ Policies'));
+    ->setTitle(_('TACACS+ Policies'))
+    ->addItem(\Modules\Tacacs\ApplyQueue::statusBox());
 
 if (!empty($data['error'])) {
     $html_page->addItem(

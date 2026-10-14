@@ -1767,3 +1767,11 @@ body.tacacs-modal-open {
     box-sizing: border-box;
 }
 /* END TACACS assignment-policy-spacing v3 */
+
+/* Apply status banner (ApplyQueue::statusBox) */
+.tacacs-apply-status { margin: 0 0 12px; padding: 8px 12px; border-radius: 4px; border-left: 4px solid #9aa4ad; background: rgba(154,164,173,.12); }
+.tacacs-apply-status .tacacs-apply-label { font-weight: bold; }
+.tacacs-apply-ok { border-left-color: #2f9e44; background: rgba(47,158,68,.10); }
+.tacacs-apply-pending { border-left-color: #1c7ed6; background: rgba(28,126,214,.10); }
+.tacacs-apply-stale, .tacacs-apply-unavailable { border-left-color: #f08c00; background: rgba(240,140,0,.12); }
+.tacacs-apply-failed { border-left-color: #e03131; background: rgba(224,49,49,.12); }
