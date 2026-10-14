@@ -5,6 +5,8 @@
  * @var array $data
  */
 
+$this->addCssFile('modules/Oxidized/assets/oxidized.css');
+
 $action_url = (new CUrl('zabbix.php'))
     ->setArgument('action', 'oxidized.nodes')
     ->getUrl();
@@ -232,14 +234,14 @@ $node_form
     );
 
 $html_page->addItem(
-    new CDiv([
-        new CTag(
+    (new CDiv([
+        (new CTag(
             'h2',
             true,
             $form_title
-        ),
+        ))->addClass('oxidized-section-title'),
         $node_form
-    ])
+    ]))->addClass('oxidized-node-form-section')
 );
 
 $reload_form = (new CForm(
@@ -394,16 +396,14 @@ foreach ($data['nodes'] as $node) {
                 )
             );
 
-        $actions = [
-            new CLink(
+        $actions = (new CDiv([
+            (new CLink(
                 _('Edit'),
                 $edit_url
-            ),
-            ' ',
+            ))->addClass('btn'),
             $backup_form,
-            ' ',
             $delete_form
-        ];
+        ]))->addClass('oxidized-node-actions');
     }
 
     $table->addRow([
@@ -419,17 +419,15 @@ foreach ($data['nodes'] as $node) {
 }
 
 $html_page->addItem(
-    new CTag(
-        'h2',
-        true,
-        _('Configured nodes')
-    )
-);
-
-$html_page->addItem($table);
-
-$html_page->addItem(
-    new CDiv($reload_form)
+    (new CDiv([
+        (new CTag(
+            'h2',
+            true,
+            _('Configured nodes')
+        ))->addClass('oxidized-section-title'),
+        $table,
+        (new CDiv($reload_form))->addClass('oxidized-reload')
+    ]))->addClass('oxidized-nodes-table-section')
 );
 
 $html_page->show();

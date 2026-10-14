@@ -774,6 +774,7 @@ MODULE_FILES=(
     "actions/NetworkSyslog.php"
     "actions/NetworkSyslogDownload.php"
     "views/network.syslog.php"
+    "assets/networksyslog.css"
 )
 
 if [ ! -d "$MODULE_SOURCE" ]; then
@@ -792,7 +793,8 @@ done
 
 mkdir -p \
     "$MODULE_TARGET/actions" \
-    "$MODULE_TARGET/views"
+    "$MODULE_TARGET/views" \
+    "$MODULE_TARGET/assets"
 
 for module_file in "${MODULE_FILES[@]}"; do
     install -o root -g root -m 0644 \

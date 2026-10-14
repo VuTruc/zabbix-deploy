@@ -5,6 +5,8 @@
  * @var array $data
  */
 
+$this->addCssFile('modules/NetworkSyslog/assets/networksyslog.css');
+
 $html_page = (new CHtmlPage())
     ->setTitle($data['title']);
 
@@ -85,80 +87,79 @@ if (isset($data['ip'])) {
     /*
      * Header
      */
-    $html_page->addItem(
-        new CTag(
+    $device_section = (new CDiv())
+        ->addClass('networksyslog-section');
+
+    $device_section->addItem(
+        (new CTag(
             'h2',
             true,
             _('Device').' : '.$ip
-        )
+        ))->addClass('networksyslog-section-title')
     );
 
     /*
      * Navigation
      */
-    $navigation = new CDiv();
+    $navigation = (new CDiv())
+        ->addClass('networksyslog-actions');
 
     $navigation->addItem(
-        new CLink(
+        (new CLink(
             _('← Devices'),
             $back_url
-        )
+        ))->addClass('btn')
     );
-
-    $navigation->addItem(' ');
 
     if ($type === 'events') {
         $navigation->addItem(
-            new CLink(
+            (new CLink(
                 _('Syslog'),
                 $syslog_url
-            )
+            ))->addClass('btn')
         );
 
-        $navigation->addItem(' ');
-
         $navigation->addItem(
-            new CSpan(
+            (new CSpan(
                 _('Events')
-            )
+            ))->addClass('networksyslog-current')
         );
     }
     else {
         $navigation->addItem(
-            new CSpan(
+            (new CSpan(
                 _('Syslog')
-            )
+            ))->addClass('networksyslog-current')
         );
 
-        $navigation->addItem(' ');
-
         $navigation->addItem(
-            new CLink(
+            (new CLink(
                 _('Events'),
                 $events_url
-            )
+            ))->addClass('btn')
         );
     }
 
-    $navigation->addItem(' ');
-
     $navigation->addItem(
-        new CLink(
+        (new CLink(
             _('Refresh'),
             $refresh_url
-        )
+        ))->addClass('btn')
     );
-
-    $navigation->addItem(' ');
 
     $navigation->addItem(
-        new CLink(
+        (new CLink(
             _('Download file'),
             $download_url
-        )
+        ))->addClass('btn')
     );
 
-    $html_page->addItem($navigation);
+    $device_section->addItem($navigation);
+
+    $html_page->addItem($device_section);
+
+    $log_section = (new CDiv())
+        ->addClass('networksyslog-section');
 
     /*
      * Current log title
@@ -167,36 +168,36 @@ if (isset($data['ip'])) {
         ? _('Events')
         : _('Syslog');
 
-    $html_page->addItem(
-        new CTag(
-            'h3',
+    $log_section->addItem(
+        (new CTag(
+            'h2',
             true,
             $log_title
-        )
+        ))->addClass('networksyslog-section-title')
     );
 
     /*
      * File information
      */
     if ($file !== '') {
-        $html_page->addItem(
-            new CDiv(
+        $log_section->addItem(
+            (new CDiv(
                 _('File').': '.$file
-            )
+            ))->addClass('networksyslog-meta')
         );
     }
 
     /*
      * Log statistics
      */
-    $html_page->addItem(
-        new CDiv(
+    $log_section->addItem(
+        (new CDiv(
             _('Total lines').': '.$total_lines.
             ' | '.
             _('Page').': '.$page.' / '.$total_pages.
             ' | '.
             _('Lines per page').': '.$lines_per_page
-        )
+        ))->addClass('networksyslog-meta')
     );
 
     /*
@@ -215,10 +216,10 @@ if (isset($data['ip'])) {
             ]);
         }
 
-        $html_page->addItem($table);
+        $log_section->addItem($table);
     }
     else {
-        $html_page->addItem(
+        $log_section->addItem(
             new CDiv(
                 $type === 'events'
                     ? _('No event messages found.')
@@ -235,7 +236,8 @@ if (isset($data['ip'])) {
 
     if ($total_pages > 1) {
 
-        $pagination = new CDiv();
+        $pagination = (new CDiv())
+            ->addClass('networksyslog-pagination');
 
         /*
          * First
@@ -395,8 +397,10 @@ if (isset($data['ip'])) {
             );
         }
 
-        $html_page->addItem($pagination);
+        $log_section->addItem($pagination);
     }
+
+    $html_page->addItem($log_section);
 
     $html_page->show();
 
@@ -435,28 +439,26 @@ foreach ($devices as $device) {
  * ============================================================
  */
 
-$summary_table = (new CTableInfo())
-    ->setHeader([
-        _('Metric'),
-        _('Value')
-    ]);
+$summary_stats = (new CDiv())
+    ->addClass('networksyslog-stats');
 
-$summary_table->addRow([
-    _('Discovered devices'),
-    $total_devices
-]);
+foreach ([
+    _('Discovered devices') => $total_devices,
+    _('Devices with syslog') => $syslog_devices,
+    _('Devices with events') => $event_devices
+] as $stat_title => $stat_value) {
+    $summary_stats->addItem(
+        (new CDiv([
+            (new CDiv($stat_title))->addClass('networksyslog-stat-title'),
+            (new CDiv($stat_value))->addClass('networksyslog-stat-value')
+        ]))->addClass('networksyslog-stat')
+    );
+}
 
-$summary_table->addRow([
-    _('Devices with syslog'),
-    $syslog_devices
-]);
-
-$summary_table->addRow([
-    _('Devices with events'),
-    $event_devices
-]);
-
-$html_page->addItem($summary_table);
+$html_page->addItem(
+    (new CDiv($summary_stats))
+        ->addClass('networksyslog-section')
+);
 
 
 /*
@@ -464,14 +466,6 @@ $html_page->addItem($summary_table);
  * DEVICE LIST
  * ============================================================
  */
-
-$html_page->addItem(
-    new CTag(
-        'h2',
-        true,
-        _('Network Syslog Devices')
-    )
-);
 
 $table = (new CTableInfo())
     ->setHeader([
@@ -548,6 +542,15 @@ foreach ($devices as $device) {
     ]);
 }
 
-$html_page->addItem($table);
+$html_page->addItem(
+    (new CDiv([
+        (new CTag(
+            'h2',
+            true,
+            _('Network Syslog Devices')
+        ))->addClass('networksyslog-section-title'),
+        $table
+    ]))->addClass('networksyslog-section')
+);
 
 $html_page->show();

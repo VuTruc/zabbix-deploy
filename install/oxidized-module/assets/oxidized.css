@@ -1,0 +1,43 @@
+/* Oxidized nodes: section layout matches the TACACS+ module. */
+
+#page-title-general {
+    font-weight: 700 !important;
+}
+
+.oxidized-node-form-section,
+.oxidized-nodes-table-section {
+    margin-bottom: 30px;
+    padding: 20px 24px 24px;
+    background: #ffffff;
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+.oxidized-section-title {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 20px;
+}
+
+.oxidized-node-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.oxidized-node-actions form {
+    display: inline-flex;
+    margin: 0;
+}
+
+.oxidized-node-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.oxidized-reload {
+    margin-top: 16px;
+}
