@@ -228,6 +228,26 @@ if (!empty($data['page_locked'])) {
 
     $html_page->addItem($lockScreen);
 
+    // Submit each lock screen form only once: a second submit of the set
+    // password form would replace the session cookie that carries the
+    // one-time recovery code. Inline on purpose (view addJsFile() paths are
+    // not loaded for modules).
+    $html_page->addItem(
+        (new CScriptTag(
+            'document.querySelectorAll(".tacacs-assignment-lock-screen form").forEach(function (form) {'.
+                ' form.addEventListener("submit", function (event) {'.
+                    ' if (form.dataset.submitted === "1") { event.preventDefault(); return; }'.
+                    ' form.dataset.submitted = "1";'.
+                    ' form.querySelectorAll("button[type=submit]").forEach(function (button) {'.
+                        ' button.setAttribute("aria-disabled", "true");'.
+                        ' button.style.pointerEvents = "none";'.
+                        ' button.style.opacity = "0.6";'.
+                    ' });'.
+                ' });'.
+            ' });'
+        ))->setOnDocumentReady()
+    );
+
     $html_page->show();
     return;
 }

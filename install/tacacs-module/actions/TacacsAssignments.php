@@ -136,6 +136,52 @@ class TacacsAssignments extends CController {
         }
     }
 
+    /**
+     * The password is already set and the submitted pair matches it: treat the
+     * request as the same setup (knowing the password already allows changing
+     * it), rotate the recovery code, unlock and show the new code.
+     * Returns false when the submitted password does not match.
+     */
+    private function finishRepeatedPasswordSetup(
+        \PDO $db,
+        array $security,
+        string $password,
+        string $confirmation
+    ): bool {
+        if (!is_string($security['password_hash'])
+            || !hash_equals($password, $confirmation)
+            || !password_verify($password, $security['password_hash'])) {
+            return false;
+        }
+
+        $recoveryCode = $this->generatePageRecoveryCode();
+
+        $stmt = $db->prepare(
+            'UPDATE assignment_page_security
+             SET recovery_hash = :recovery_hash,
+                 failed_attempts = 0,
+                 locked_until = NULL
+             WHERE id = 1 AND revision = :revision'
+        );
+        $stmt->execute([
+            ':recovery_hash' => password_hash($recoveryCode, PASSWORD_DEFAULT),
+            ':revision' => (int) $security['revision']
+        ]);
+
+        if ($stmt->rowCount() !== 1) {
+            return false;
+        }
+
+        $this->unlockAssignmentsPage($this->getPageSecurity($db));
+        $this->storePagePasswordNotice(
+            _('Assignment page password configured. Save the recovery code below; it is shown only once.'),
+            $recoveryCode
+        );
+        $this->redirect();
+
+        return true;
+    }
+
     private function generatePageRecoveryCode(): string {
         return strtoupper(implode('-', str_split(bin2hex(random_bytes(12)), 8)));
     }
@@ -222,6 +268,14 @@ class TacacsAssignments extends CController {
 
                     if ($pageAction === 'set_page_password') {
                         if ($security['password_hash'] !== null) {
+                            // A repeated submit (double click, Enter + click, browser
+                            // resend) arrives after the first one stored the password.
+                            // The session is a cookie, so the first response's recovery
+                            // code is lost: finish the setup again with a new code.
+                            if ($this->finishRepeatedPasswordSetup($db, $security, $newPassword, $confirmation)) {
+                                return;
+                            }
+
                             throw new \InvalidArgumentException(
                                 _('The Assignment page password has already been set. Unlock the page or use the recovery code to reset it.')
                             );
@@ -245,6 +299,13 @@ class TacacsAssignments extends CController {
                         ]);
 
                         if ($stmt->rowCount() !== 1) {
+                            // Lost the race with a concurrent submit of the same form.
+                            if ($this->finishRepeatedPasswordSetup(
+                                $db, $this->getPageSecurity($db), $newPassword, $confirmation
+                            )) {
+                                return;
+                            }
+
                             throw new \InvalidArgumentException(
                                 _('The Assignment page password was already configured by another request. Please unlock the page.')
                             );

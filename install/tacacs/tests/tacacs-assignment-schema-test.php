@@ -99,6 +99,9 @@ $checks = [
         substr_count($content['schema'], 'ON UPDATE CURRENT_TIMESTAMP') >= 5
         && str_contains($content['installer'], 'migrate-updated-at.php')
         && str_contains($content['installer'], '"include/DateFormat.php"'),
+    'repeated page password setup shows a recovery code instead of failing' =>
+        substr_count($content['controller'], 'finishRepeatedPasswordSetup(') >= 3
+        && str_contains($content['controller'], 'password_verify($password, $security[\'password_hash\'])'),
     'installer deploys vendor profiles and runs the vendor migration' =>
         str_contains($content['installer'], '"include/VendorProfiles.php"')
         && str_contains($content['installer'], 'migrate-vendor-levels.php')
