@@ -7,6 +7,10 @@
     "author": "VuTruc",
     "description": "Oxidized network configuration backup",
     "actions": {
+        "oxidized.dashboard": {
+            "class": "OxidizedDashboard",
+            "view": "oxidized.dashboard"
+        },
         "oxidized.nodes": {
             "class": "OxidizedNodes",
             "view": "oxidized.nodes"
