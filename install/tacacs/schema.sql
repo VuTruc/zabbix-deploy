@@ -154,6 +154,8 @@ CREATE TABLE IF NOT EXISTS assignments (
     access_mode ENUM('policy','all') NOT NULL DEFAULT 'policy',
     -- Vendor privilege level; resolved against the device vendor profile.
     access_level VARCHAR(32) NOT NULL DEFAULT 'default',
+    -- Device-side profile/role/template name for the 'custom' level.
+    access_custom VARCHAR(64) DEFAULT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uk_assignments_user_device (user_id, device_id),

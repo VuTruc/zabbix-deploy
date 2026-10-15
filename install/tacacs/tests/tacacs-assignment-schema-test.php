@@ -13,7 +13,8 @@ $paths = [
     'installer' => $repo.'/install/11-tacacs.sh',
     'migration' => $repo.'/install/tacacs/migrate-assignments-v2.php',
     'vendor_migration' => $repo.'/install/tacacs/migrate-vendor-levels.php',
-    'vendor_profiles' => $repo.'/install/tacacs-module/include/VendorProfiles.php'
+    'vendor_profiles' => $repo.'/install/tacacs-module/include/VendorProfiles.php',
+    'devices_controller' => $repo.'/install/tacacs-module/actions/TacacsDevices.php'
 ];
 
 $content = [];
@@ -32,7 +33,7 @@ $checks = [
     'schema enforces one assignment per user/device' =>
         str_contains($content['schema'], 'UNIQUE KEY uk_assignments_user_device (user_id, device_id)'),
     'controller stores mode and nullable policy id' =>
-        str_contains($content['controller'], '(user_id, device_id, policy_id, access_mode, access_level)')
+        str_contains($content['controller'], '(user_id, device_id, policy_id, access_mode, access_level, access_custom)')
         && str_contains($content['controller'], "':policy_id' => \$allowAll ? null : \$policyId")
         && str_contains($content['controller'], "':access_mode' => \$allowAll ? 'all' : 'policy'"),
     'generator reads Assignment v2 and skips users without authorization' =>
@@ -53,10 +54,10 @@ $checks = [
         str_contains($content['schema'], "vendor VARCHAR(64) NOT NULL DEFAULT 'generic'")
         && str_contains($content['schema'], "access_level VARCHAR(32) NOT NULL DEFAULT 'default'"),
     'controller validates access level against the device vendor' =>
-        str_contains($content['controller'], '(user_id, device_id, policy_id, access_mode, access_level)')
+        str_contains($content['controller'], '(user_id, device_id, policy_id, access_mode, access_level, access_custom)')
         && str_contains($content['controller'], "array_key_exists(\$accessLevel, \$vendorProfile['levels'])"),
     'generator emits vendor attributes and fails on conflicting levels' =>
-        str_contains($content['generator'], 'VendorProfiles::attributes(')
+        str_contains($content['generator'], 'VendorProfiles::blocks(')
         && str_contains($content['generator'], 'cannot apply different privilege levels per device'),
     'vendor profiles stay free of Zabbix-only functions for the CLI generator' =>
         preg_match('/\b_\(/', $content['vendor_profiles']) === 0,
@@ -64,6 +65,18 @@ $checks = [
         str_contains($content['controller'], "\$allowAll = (\$policyChoice === '' || \$policyChoice === '0')")
         && str_contains($content['controller'], 'VendorProfiles::supportsCommandPolicy(')
         && str_contains($content['vendor_profiles'], "'command_authorization' => false"),
+    'custom access level is stored and validated before reaching tac_plus.conf' =>
+        str_contains($content['schema'], 'access_custom VARCHAR(64) DEFAULT NULL')
+        && str_contains($content['vendor_migration'], 'access_custom')
+        && str_contains($content['controller'], 'VendorProfiles::isValidCustom($accessCustom)')
+        && str_contains($content['generator'], 'a.access_custom')
+        && str_contains($content['vendor_profiles'], "CUSTOM_PATTERN = '/^[A-Za-z0-9_.@-]{1,64}$/'"),
+    'generator validates service and attribute names from vendor profiles' =>
+        str_contains($content['generator'], 'Invalid service name in vendor profile')
+        && str_contains($content['generator'], 'Unquoted attribute value must be numeric'),
+    'devices no longer edit device_type; vendor/platform replaces it' =>
+        !str_contains($content['devices_controller'], 'device_type')
+        && !str_contains($content['installer'], 'include/DeviceTypes.php'),
     'installer deploys vendor profiles and runs the vendor migration' =>
         str_contains($content['installer'], '"include/VendorProfiles.php"')
         && str_contains($content['installer'], 'migrate-vendor-levels.php')

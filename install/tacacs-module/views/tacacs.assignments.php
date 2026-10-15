@@ -319,13 +319,21 @@ foreach (VendorProfiles::all() as $vendorKey => $vendor) {
         ->setDisabled();
 
     $levelHelp = [
-        new CTag('span', true, $vendor['label'].': '.$vendor['description'])
+        new CTag('span', true, VendorProfiles::displayName($vendorKey).': '.$vendor['description'])
     ];
 
     foreach ($vendor['levels'] as $levelKey => $level) {
         $levelSelect->addOption(new CSelectOption($levelKey, $level['label']));
         $levelHelp[] = new CTag('br');
         $levelHelp[] = new CTag('span', true, $level['label'].': '.$level['description']);
+    }
+
+    if (isset($vendor['custom'])) {
+        $levelSelect->addOption(
+            new CSelectOption(VendorProfiles::CUSTOM_LEVEL, $vendor['custom']['label'])
+        );
+        $levelHelp[] = new CTag('br');
+        $levelHelp[] = new CTag('span', true, $vendor['custom']['label'].': '.$vendor['custom']['description']);
     }
 
     $accessLevelSelects[] = (new CDiv([
@@ -335,6 +343,18 @@ foreach (VendorProfiles::all() as $vendorKey => $vendor) {
         ->setAttribute('data-access-level-vendor', $vendorKey)
         ->setAttribute('hidden', 'hidden');
 }
+
+// Shown only when the active platform's level is Custom.
+$accessLevelSelects[] = (new CDiv(
+    (new CTextBox('access_custom'))
+        ->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
+        ->setAttribute('maxlength', 64)
+        ->setAttribute('placeholder', _('Profile, role or template name on the device'))
+        ->setAttribute('autocomplete', 'off')
+        ->setEnabled(false)
+))
+    ->setAttribute('data-access-custom', '1')
+    ->setAttribute('hidden', 'hidden');
 
 $policyOptions = [];
 foreach ($data['policies'] as $policy) {
@@ -425,6 +445,8 @@ $accessLevelScript = <<<'JS'
     var device = form.querySelector('z-select[name="device_id"]');
     var placeholder = form.querySelector('[data-access-level-placeholder]');
     var panels = form.querySelectorAll('[data-access-level-vendor]');
+    var custom = form.querySelector('[data-access-custom]');
+    var customInput = custom ? custom.querySelector('input[name="access_custom"]') : null;
     var policy = form.querySelector('z-select[name="policy_id"]');
     var policySupported = form.querySelector('[data-policy-supported]');
     var policyUnsupported = form.querySelector('[data-policy-unsupported]');
@@ -446,13 +468,24 @@ $accessLevelScript = <<<'JS'
     function syncAccessLevel() {
         var vendor = vendors[String(device.value)] || '';
 
+        var customActive = false;
+
         panels.forEach(function (panel) {
             var active = panel.getAttribute('data-access-level-vendor') === vendor;
             var select = panel.querySelector('z-select');
 
             panel.hidden = !active;
-            if (select) select.toggleAttribute('disabled', !active);
+            if (select) {
+                select.toggleAttribute('disabled', !active);
+                if (active && select.value === 'custom') customActive = true;
+            }
         });
+
+        if (custom) custom.hidden = !customActive;
+        if (customInput) {
+            customInput.disabled = !customActive;
+            customInput.required = customActive;
+        }
 
         if (placeholder) placeholder.hidden = vendor !== '';
 
@@ -468,6 +501,10 @@ $accessLevelScript = <<<'JS'
     }
 
     device.addEventListener('change', syncAccessLevel);
+    panels.forEach(function (panel) {
+        var select = panel.querySelector('z-select');
+        if (select) select.addEventListener('change', syncAccessLevel);
+    });
 
     // The preselected device fires no change event; sync once z-select has a value.
     customElements.whenDefined('z-select').then(function () {
@@ -512,7 +549,8 @@ foreach ($data['assignments'] as $assignment) {
         $assignment['device_name'].' ('.$assignment['device_address'].')',
         VendorProfiles::levelLabel(
             (string) $assignment['device_vendor'],
-            (string) $assignment['access_level']
+            (string) $assignment['access_level'],
+            (string) ($assignment['access_custom'] ?? '')
         ),
         $assignment['policy_name'] === null
             ? _('None')

@@ -38,6 +38,7 @@ class TacacsAssignments extends CController {
             'policy_id' => 'string',
             'access_mode' => 'in all,policy',
             'access_level' => 'string',
+            'access_custom' => 'string',
             'page_action' => 'in unlock_page,set_page_password,reset_page_password,change_page_password,logout_page',
             'page_password' => 'string',
             'current_page_password' => 'string',
@@ -450,6 +451,7 @@ class TacacsAssignments extends CController {
                 $accessMode = $allowAll ? 'all' : 'policy';
                 $policyId = $allowAll ? null : (int) $policyChoice;
                 $accessLevel = trim((string) $this->getInput('access_level', ''));
+                $accessCustom = trim((string) $this->getInput('access_custom', ''));
 
                 if ($userId < 1 || $deviceId < 1
                     || !in_array($accessMode, ['all', 'policy'], true)
@@ -504,17 +506,33 @@ class TacacsAssignments extends CController {
                         $accessLevel = $vendorProfile['default_level'];
                     }
 
-                    if (!array_key_exists($accessLevel, $vendorProfile['levels'])) {
+                    if ($accessLevel === VendorProfiles::CUSTOM_LEVEL) {
+                        if (!VendorProfiles::supportsCustom($deviceVendor)) {
+                            throw new \InvalidArgumentException(
+                                _('This device platform does not accept a custom access level.')
+                            );
+                        }
+
+                        if (!VendorProfiles::isValidCustom($accessCustom)) {
+                            throw new \InvalidArgumentException(
+                                _('Enter the profile, role or template name exactly as configured on the device: 1-64 characters, letters, digits and . _ @ - only.')
+                            );
+                        }
+                    }
+                    elseif (!array_key_exists($accessLevel, $vendorProfile['levels'])) {
                         throw new \InvalidArgumentException(
                             _('The selected access level is not available for this device vendor.')
                         );
                     }
+                    else {
+                        $accessCustom = '';
+                    }
 
                     $stmt = $db->prepare(
                         'INSERT INTO assignments
-                            (user_id, device_id, policy_id, access_mode, access_level)
+                            (user_id, device_id, policy_id, access_mode, access_level, access_custom)
                          VALUES
-                            (:user_id, :device_id, :policy_id, :access_mode, :access_level)'
+                            (:user_id, :device_id, :policy_id, :access_mode, :access_level, :access_custom)'
                     );
 
                     try {
@@ -523,7 +541,8 @@ class TacacsAssignments extends CController {
                             ':device_id' => $deviceId,
                             ':policy_id' => $allowAll ? null : $policyId,
                             ':access_mode' => $allowAll ? 'all' : 'policy',
-                            ':access_level' => $accessLevel
+                            ':access_level' => $accessLevel,
+                            ':access_custom' => $accessCustom !== '' ? $accessCustom : null
                         ]);
                     }
                     catch (\PDOException $e) {
@@ -581,6 +600,7 @@ class TacacsAssignments extends CController {
                     a.created_at,
                     a.access_mode,
                     a.access_level,
+                    a.access_custom,
                     u.username,
                     d.vendor AS device_vendor,
                     d.name AS device_name,

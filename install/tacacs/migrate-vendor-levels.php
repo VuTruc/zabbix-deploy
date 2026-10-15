@@ -43,7 +43,9 @@ try {
         ],
         'assignments' => [
             'access_level' =>
-                "ALTER TABLE assignments ADD COLUMN access_level VARCHAR(32) NOT NULL DEFAULT 'default' AFTER access_mode"
+                "ALTER TABLE assignments ADD COLUMN access_level VARCHAR(32) NOT NULL DEFAULT 'default' AFTER access_mode",
+            'access_custom' =>
+                "ALTER TABLE assignments ADD COLUMN access_custom VARCHAR(64) DEFAULT NULL AFTER access_level"
         ]
     ];
 

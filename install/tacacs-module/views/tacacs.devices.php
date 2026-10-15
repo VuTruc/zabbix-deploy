@@ -4,10 +4,8 @@ $this->addCssFile('modules/Tacacs/assets/tacacs.css');
 
 require_once dirname(__DIR__).'/include/ApplyQueue.php';
 
-require_once dirname(__DIR__).'/include/DeviceTypes.php';
 require_once dirname(__DIR__).'/include/VendorProfiles.php';
 
-use Modules\Tacacs\DeviceTypes;
 use Modules\Tacacs\VendorProfiles;
 
 $form_action = (new CUrl('zabbix.php'))
@@ -15,16 +13,6 @@ $form_action = (new CUrl('zabbix.php'))
 
 $edit_device = $data['edit_device'];
 $is_edit = ($edit_device !== null);
-
-$device_types = DeviceTypes::all();
-
-$current_device_type = $is_edit
-        ? $edit_device['device_type']
-        : 'other';
-
-if (!array_key_exists($current_device_type, $device_types)) {
-        $current_device_type = 'other';
-}
 
 $vendors = VendorProfiles::all();
 
@@ -49,99 +37,61 @@ if ($is_edit) {
         $form->addVar('id', $edit_device['id']);
 }
 
-$device_type_select = (new CSelect('device_type'))
-        ->setValue($current_device_type)
-        ->addOption(
-                new CSelectOption(
-                        'router',
-                        _('Router')
-                )
-        )
-        ->addOption(
-                new CSelectOption(
-                        'switch',
-                        _('Switch')
-                )
-        )
-        ->addOption(
-                new CSelectOption(
-                        'firewall',
-                        _('Firewall')
-                )
-        )
-        ->addOption(
-                new CSelectOption(
-                        'wireless',
-                        _('Wireless')
-                )
-        )
-        ->addOption(
-                new CSelectOption(
-                        'loadbalancer',
-                        _('Load Balancer')
-                )
-        )
-        ->addOption(
-                new CSelectOption(
-                        'server',
-                        _('Server')
-                )
-        )
-        ->addOption(
-                new CSelectOption(
-                        'vpn',
-                        _('VPN')
-                )
-        )
-        ->addOption(
-                new CSelectOption(
-                        'other',
-                        _('Other')
-                )
-        )
-        ->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH);
+$manufacturers = VendorProfiles::manufacturers();
+$current_manufacturer = VendorProfiles::manufacturerOf($current_vendor);
 
-$device_type_help = (new CDiv([
-        (new CTag(
-                'span',
-                true,
-                _('Suggestion: Router: Routing device. Switch: Network switch. Firewall: Security gateway. Wireless: Wireless controller or Wi-Fi device.')
-        )),
-        (new CTag('br')),
-        (new CTag(
-                'span',
-                true,
-                _('Load Balancer: Load balancing system. Server: Managed server. VPN: VPN gateway. Other: Other device type.')
-        ))
-]))
-        ->addClass('tacacs-device-type-help');
+// Manufacturer only filters the Platform list; the platform key is saved.
+$manufacturer_select = (new CSelect('manufacturer'))
+        ->setValue($current_manufacturer)
+        ->setFocusableElementId('label-manufacturer')
+        ->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
+        ->addOptions(CSelect::createOptionsFromArray($manufacturers));
 
-$vendor_select = (new CSelect('vendor'))
-        ->setValue($current_vendor)
-        ->setFocusableElementId('label-vendor')
-        ->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH);
+$platform_fields = [];
 
-$vendor_help_lines = [];
+foreach ($manufacturers as $manufacturer_key => $manufacturer_label) {
+        $active = ($manufacturer_key === $current_manufacturer);
+        $platform_select = (new CSelect('vendor'))
+                ->setId('vendor_'.$manufacturer_key)
+                ->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
+                ->setDisabled(!$active);
+        $platform_help = [];
+        $first_platform = null;
 
-foreach ($vendors as $vendor_key => $vendor) {
-        $vendor_select->addOption(
-                new CSelectOption($vendor_key, $vendor['label'])
-        );
+        foreach ($vendors as $vendor_key => $vendor) {
+                if ($vendor['manufacturer'] !== $manufacturer_key) {
+                        continue;
+                }
 
-        if ($vendor_help_lines) {
-                $vendor_help_lines[] = new CTag('br');
+                $first_platform = $first_platform ?? $vendor_key;
+                $platform_select->addOption(
+                        new CSelectOption($vendor_key, $vendor['label'])
+                );
+
+                if ($platform_help) {
+                        $platform_help[] = new CTag('br');
+                }
+
+                $platform_help[] = new CTag(
+                        'span',
+                        true,
+                        $vendor['label'].': '.$vendor['description']
+                );
         }
 
-        $vendor_help_lines[] = new CTag(
-                'span',
-                true,
-                $vendor['label'].': '.$vendor['description']
-        );
-}
+        $platform_select->setValue($active ? $current_vendor : $first_platform);
 
-// Vendor decides which privilege levels Assignments offers for this device.
-$vendor_help = (new CDiv($vendor_help_lines))
-        ->addClass('tacacs-device-type-help');
+        $platform_field = (new CDiv([
+                $platform_select,
+                (new CDiv($platform_help))->addClass('tacacs-device-type-help')
+        ]))->setAttribute('data-platform-manufacturer', $manufacturer_key);
+
+        if (!$active) {
+                $platform_field->setAttribute('hidden', 'hidden');
+        }
+
+        $platform_fields[] = $platform_field;
+}
 
 $device_form = (new CFormGrid())
         ->addItem([
@@ -188,25 +138,16 @@ $device_form = (new CFormGrid())
         ])
         ->addItem([
                 new CLabel(
-                        _('Device type'),
-                        'device_type'
+                        _('Vendor'),
+                        'label-manufacturer'
                 ),
 
-                new CFormField([
-                        $device_type_select,
-                        $device_type_help
-                ])
+                new CFormField($manufacturer_select)
         ])
         ->addItem([
-                new CLabel(
-                        _('Vendor'),
-                        'label-vendor'
-                ),
+                new CLabel(_('Platform')),
 
-                new CFormField([
-                        $vendor_select,
-                        $vendor_help
-                ])
+                new CFormField($platform_fields)
         ])
         ->addItem([
                 (new CLabel(
@@ -325,8 +266,7 @@ if (!$is_edit) {
         $table->setHeader([
                 _('Name'),
                 _('Address'),
-                _('Type'),
-                _('Vendor'),
+                _('Vendor / Platform'),
                 _('Status'),
                 _('Description'),
                 _('Actions')
@@ -396,15 +336,12 @@ if (!$is_edit) {
                                 ->setAttribute('onclick', 'return confirm('.json_encode(_('Delete this device? This cannot be undone.')).');')
                 ];
 
-                $device_type = $device['device_type'];
-
                 $table->addRow([
                         $device['name'],
                         $device['address'],
-                        $device_type,
-                        VendorProfiles::get(
+                        VendorProfiles::displayName(
                                 (string) ($device['vendor'] ?? VendorProfiles::DEFAULT_VENDOR)
-                        )['label'],
+                        ),
                         (int) $device['enabled'] === 1
                                 ? _('Enabled')
                                 : _('Disabled'),
@@ -425,5 +362,39 @@ if (!$is_edit) {
                         ->addClass('tacacs-devices-table-section')
         );
 }
+
+/*
+ * Platform list follows the selected Vendor. Inline on purpose: view
+ * addJsFile() paths go through jsLoader.php, which ignores module files.
+ */
+$platformScript = <<<'JS'
+(function () {
+    var form = document.forms.namedItem('tacacs_device_form');
+    if (!form) return;
+
+    var manufacturer = form.querySelector('z-select[name="manufacturer"]');
+    var fields = form.querySelectorAll('[data-platform-manufacturer]');
+
+    if (!manufacturer || !fields.length) return;
+
+    // Disabled selects are not submitted, so exactly one vendor is posted.
+    function syncPlatform() {
+        fields.forEach(function (field) {
+            var active = field.getAttribute('data-platform-manufacturer') === String(manufacturer.value);
+            var select = field.querySelector('z-select');
+
+            field.hidden = !active;
+            if (select) select.toggleAttribute('disabled', !active);
+        });
+    }
+
+    manufacturer.addEventListener('change', syncPlatform);
+    customElements.whenDefined('z-select').then(function () {
+        setTimeout(syncPlatform, 0);
+    });
+})();
+JS;
+
+$html_page->addItem((new CScriptTag($platformScript))->setOnDocumentReady());
 
 $html_page->show();

@@ -61,6 +61,18 @@ function connectDb(): PDO
     }
 }
 
+function formatAttribute(array $attribute): string
+{
+    $value = (string) $attribute['value'];
+
+    if (empty($attribute['quote']) && !preg_match('/^[0-9]+$/', $value)) {
+        fail('Unquoted attribute value must be numeric: '.$attribute['name']);
+    }
+
+    return '        '.(!empty($attribute['optional']) ? 'optional ' : '').$attribute['name'].' = '.
+        (!empty($attribute['quote']) ? quoteConfig($value) : $value);
+}
+
 function quoteConfig(string $value): string
 {
     return '"'.str_replace(
@@ -267,6 +279,7 @@ $assignments = $db->query(
         a.policy_id,
         a.access_mode,
         a.access_level,
+        a.access_custom,
         u.username,
         d.name AS device_name,
         d.address AS device_address,
@@ -339,7 +352,7 @@ foreach ($users as $user) {
     $addresses = [];
     $policyIds = [];
     $allowAll = false;
-    // service => attribute => [value, device name that requested it]
+    // service => attribute name => [attribute, device name that requested it]
     $serviceAttributes = [];
 
     foreach ($userRows as $assignment) {
@@ -354,23 +367,38 @@ foreach ($users as $user) {
 
         $addresses[$address] = true;
 
-        $vendor = (string) $assignment['device_vendor'];
-        $level = (string) $assignment['access_level'];
+        $blocks = VendorProfiles::blocks(
+            (string) $assignment['device_vendor'],
+            (string) $assignment['access_level'],
+            (string) ($assignment['access_custom'] ?? '')
+        );
 
-        foreach (VendorProfiles::attributes($vendor, $level) as $service => $attributes) {
-            foreach ($attributes as $attribute => $value) {
-                $previous = $serviceAttributes[$service][$attribute] ?? null;
+        foreach ($blocks as $block) {
+            $service = (string) $block['service'];
 
-                if ($previous !== null && $previous[0] !== $value) {
+            if (!preg_match('/^[A-Za-z][A-Za-z0-9_-]*$/', $service)) {
+                fail('Invalid service name in vendor profile: '.$service);
+            }
+
+            foreach ($block['attributes'] as $attribute) {
+                $name = (string) $attribute['name'];
+
+                if (!preg_match('/^[A-Za-z][A-Za-z0-9_:-]*$/', $name)) {
+                    fail('Invalid attribute name in vendor profile: '.$name);
+                }
+
+                $previous = $serviceAttributes[$service][$name] ?? null;
+
+                if ($previous !== null && $previous[0] !== $attribute) {
                     fail(
-                        'User '.$user['username'].' has different '.$service.' '.$attribute.
+                        'User '.$user['username'].' has different '.$service.' '.$name.
                         ' values on '.$previous[1].' and '.$assignment['device_name'].
                         '. Static tac_plus rules cannot apply different privilege levels per device;'.
                         ' use the same access level or a separate username.'
                     );
                 }
 
-                $serviceAttributes[$service][$attribute] = [$value, (string) $assignment['device_name']];
+                $serviceAttributes[$service][$name] = [$attribute, (string) $assignment['device_name']];
             }
         }
 
@@ -472,8 +500,8 @@ foreach ($authorizationByUser as $userId => $authorization) {
     // This directive must be the first entry in the service block.
     $output[] = '        default attribute = permit';
 
-    foreach ($authorization['service_attributes']['exec'] ?? [] as $attribute => [$value]) {
-        $output[] = '        '.$attribute.' = '.$value;
+    foreach ($authorization['service_attributes']['exec'] ?? [] as [$attribute]) {
+        $output[] = formatAttribute($attribute);
     }
 
     $output[] = '    }';
@@ -486,8 +514,8 @@ foreach ($authorizationByUser as $userId => $authorization) {
 
         $output[] = '    service = '.$service.' {';
 
-        foreach ($attributes as $attribute => [$value]) {
-            $output[] = '        '.$attribute.' = '.quoteConfig($value);
+        foreach ($attributes as [$attribute]) {
+            $output[] = formatAttribute($attribute);
         }
 
         $output[] = '    }';

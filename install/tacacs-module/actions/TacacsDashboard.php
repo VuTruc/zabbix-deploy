@@ -43,7 +43,7 @@ class TacacsDashboard extends CController {
             )->fetchAll();
 
             $devices = $db->query(
-                'SELECT id, name, address, device_type, enabled, description
+                'SELECT id, name, address, vendor, enabled, description
                  FROM devices
                  ORDER BY name'
             )->fetchAll();

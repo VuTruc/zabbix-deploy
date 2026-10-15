@@ -3,6 +3,7 @@
 $this->addCssFile('modules/Tacacs/assets/tacacs.css');
 
 require_once dirname(__DIR__).'/include/ApplyQueue.php';
+require_once dirname(__DIR__).'/include/VendorProfiles.php';
 
 (new CHtmlPage())
     ->setTitle(_('TACACS+ Dashboard'))
@@ -162,7 +163,7 @@ require_once dirname(__DIR__).'/include/ApplyQueue.php';
                     $table->setHeader([
                         _('Name'),
                         _('Address'),
-                        _('Type'),
+                        _('Vendor / Platform'),
                         _('Status')
                     ]);
 
@@ -170,7 +171,7 @@ require_once dirname(__DIR__).'/include/ApplyQueue.php';
                         $table->addRow([
                             $device['name'],
                             $device['address'],
-                            $device['device_type'],
+                            \Modules\Tacacs\VendorProfiles::displayName((string) $device['vendor']),
                             $device['enabled']
                                 ? _('Enabled')
                                 : _('Disabled')

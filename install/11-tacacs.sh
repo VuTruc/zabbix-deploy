@@ -222,7 +222,6 @@ MODULE_FILES=(
     "assets/js/tacacs.assignments.js"
     "include/ApplyQueue.php"
     "include/Db.php"
-    "include/DeviceTypes.php"
     "include/VendorProfiles.php"
     "manifest.json"
     "Module.php"
