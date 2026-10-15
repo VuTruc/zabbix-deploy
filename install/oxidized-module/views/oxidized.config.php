@@ -126,4 +126,25 @@ $html_page->addItem(
     ]))->addClass('oxidized-nodes-table-section')
 );
 
+/*
+ * Size the config viewer to the free viewport height so the whole page fits
+ * without scrolling (160px minimum). Inline on purpose: view addJsFile()
+ * paths are not loaded for modules.
+ */
+$html_page->addItem(
+    (new CScriptTag(
+        '(function () {'.
+            ' var view = document.querySelector(".oxidized-config-view");'.
+            ' if (!view) return;'.
+            ' function fit() {'.
+                ' var page = document.documentElement;'.
+                ' var free = window.innerHeight - (page.scrollHeight - view.offsetHeight) - 4;'.
+                ' view.style.height = Math.max(160, free) + "px";'.
+            ' }'.
+            ' fit();'.
+            ' window.addEventListener("resize", fit);'.
+        ' })();'
+    ))->setOnDocumentReady()
+);
+
 $html_page->show();
