@@ -55,6 +55,8 @@ CREATE TABLE IF NOT EXISTS policy_rules (
     rule_order INT NOT NULL DEFAULT 100,
     enabled TINYINT(1) NOT NULL DEFAULT 1,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     KEY idx_policy_rules_policy (policy_id),
     KEY idx_policy_rules_order (policy_id, rule_order),
@@ -157,6 +159,8 @@ CREATE TABLE IF NOT EXISTS assignments (
     -- Device-side profile/role/template name for the 'custom' level.
     access_custom VARCHAR(64) DEFAULT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uk_assignments_user_device (user_id, device_id),
     KEY idx_assignments_device_policy (device_id, policy_id),

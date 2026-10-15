@@ -3,6 +3,7 @@
 $this->addCssFile('modules/Tacacs/assets/tacacs.css');
 
 require_once dirname(__DIR__).'/include/ApplyQueue.php';
+require_once dirname(__DIR__).'/include/DateFormat.php';
 $this->addJsFile('modules/Tacacs/views/js/tacacs.policies.js');
 $base_url = (new CUrl('zabbix.php'))
 	->setArgument('action', 'tacacs.policies');
@@ -128,6 +129,8 @@ $policy_table->setHeader([
 	_('Name'),
 	_('Description'),
 	_('Status'),
+	_('Created'),
+	_('Last modified'),
 	_('Actions')
 ]);
 
@@ -150,6 +153,8 @@ foreach ($data['policies'] as $policy) {
 		$policy['name'],
 		$policy['description'] !== null ? $policy['description'] : '',
 		(int) $policy['enabled'] === 1 ? _('Enabled') : _('Disabled'),
+		\Modules\Tacacs\DateFormat::dateTime($policy['created_at']),
+		\Modules\Tacacs\DateFormat::dateTime($policy['updated_at']),
                 (new CDiv([
                         (new CLink(_('Edit'), $edit_url->getUrl()))
                                 ->addClass('btn'),
@@ -351,6 +356,8 @@ $rule_table->setHeader([
 	_('Action'),
 	_('Order'),
 	_('Status'),
+	_('Created'),
+	_('Last modified'),
 	_('Actions')
 ]);
 
@@ -376,6 +383,8 @@ foreach ($data['rules'] as $rule) {
 		strtoupper($rule['action']),
 		$rule['rule_order'],
 		(int) $rule['enabled'] === 1 ? _('Enabled') : _('Disabled'),
+		\Modules\Tacacs\DateFormat::dateTime($rule['created_at']),
+		\Modules\Tacacs\DateFormat::dateTime($rule['updated_at']),
                 (new CDiv([
                         (new CLink(_('Edit'), $edit_url->getUrl()))
                                 ->addClass('btn'),

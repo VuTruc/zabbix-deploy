@@ -3,6 +3,7 @@
 $this->addCssFile('modules/Tacacs/assets/tacacs.css');
 
 require_once dirname(__DIR__).'/include/ApplyQueue.php';
+require_once dirname(__DIR__).'/include/DateFormat.php';
 
 require_once dirname(__DIR__).'/include/VendorProfiles.php';
 
@@ -268,6 +269,8 @@ if (!$is_edit) {
                 _('Vendor / Platform'),
                 _('Status'),
                 _('Description'),
+                _('Created'),
+                _('Last modified'),
                 _('Actions')
         ]);
 
@@ -347,6 +350,8 @@ if (!$is_edit) {
                         $device['description'] !== null
                                 ? $device['description']
                                 : '',
+                        \Modules\Tacacs\DateFormat::dateTime($device['created_at']),
+                        \Modules\Tacacs\DateFormat::dateTime($device['updated_at']),
                         (new CDiv($actions))
                                 ->addClass('tacacs-device-actions')
                 ]);

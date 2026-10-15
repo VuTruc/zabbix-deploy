@@ -95,6 +95,10 @@ $checks = [
         && str_contains($content['devices_controller'], "ApplyQueue::request('devices changed', false, false)")
         && str_contains($content['apply_queue'], "'force' => \$force")
         && str_contains($content['apply_script'], 'request_forced'),
+    'lists show Created and Last modified (updated_at on every managed table)' =>
+        substr_count($content['schema'], 'ON UPDATE CURRENT_TIMESTAMP') >= 5
+        && str_contains($content['installer'], 'migrate-updated-at.php')
+        && str_contains($content['installer'], '"include/DateFormat.php"'),
     'installer deploys vendor profiles and runs the vendor migration' =>
         str_contains($content['installer'], '"include/VendorProfiles.php"')
         && str_contains($content['installer'], 'migrate-vendor-levels.php')

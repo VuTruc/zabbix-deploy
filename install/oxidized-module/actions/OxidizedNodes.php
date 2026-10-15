@@ -27,6 +27,9 @@ class OxidizedNodes extends CController {
     private const NODE_NEXT_URL =
         'http://127.0.0.1:8888/oxidized/node/next';
 
+    private const NODES_STATUS_URL =
+        'http://127.0.0.1:8888/oxidized/nodes.json';
+
     private const BOOTSTRAP_NAME = 'zabbix-server';
     private const BOOTSTRAP_IP = '127.0.0.1';
 
@@ -164,6 +167,7 @@ class OxidizedNodes extends CController {
 
         $nodes = $this->readNodes();
         $settings = $this->readSettings();
+        $last_runs = $this->readLastRuns();
 
         $view_nodes = [];
 
@@ -192,7 +196,9 @@ class OxidizedNodes extends CController {
                     ? (int) (
                         $node_settings['next_backup_at'] ?? 0
                     )
-                    : null
+                    : null,
+                // null: Oxidized API unavailable or node not loaded yet.
+                'last_run' => $last_runs[$node['name']] ?? null
             ];
         }
 
@@ -716,6 +722,62 @@ class OxidizedNodes extends CController {
                 return $settings;
             }
         );
+    }
+
+    /**
+     * Last backup run per node from the Oxidized web API:
+     * name => ['time' => unix timestamp|null, 'status' => string].
+     * Returns [] when the API does not answer, so the page still loads.
+     */
+    private function readLastRuns(): array {
+        $curl = curl_init(self::NODES_STATUS_URL);
+
+        if ($curl === false) {
+            return [];
+        }
+
+        curl_setopt_array($curl, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => 2,
+            CURLOPT_TIMEOUT => 3,
+            CURLOPT_HTTPGET => true,
+            CURLOPT_FOLLOWLOCATION => false
+        ]);
+
+        $body = curl_exec($curl);
+        $code = (int) curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
+        curl_close($curl);
+
+        if (!is_string($body) || $code < 200 || $code >= 300) {
+            return [];
+        }
+
+        $data = json_decode($body, true);
+
+        if (!is_array($data)) {
+            return [];
+        }
+
+        $runs = [];
+
+        foreach ($data as $entry) {
+            if (!is_array($entry) || !isset($entry['name'])) {
+                continue;
+            }
+
+            // "time" is the end of the last run in UTC; "status" is never,
+            // success, no_connection, ...
+            $time = isset($entry['time']) && is_string($entry['time'])
+                ? strtotime($entry['time'])
+                : false;
+
+            $runs[(string) $entry['name']] = [
+                'time' => $time !== false ? $time : null,
+                'status' => (string) ($entry['status'] ?? '')
+            ];
+        }
+
+        return $runs;
     }
 
     private function readSettings(): array {

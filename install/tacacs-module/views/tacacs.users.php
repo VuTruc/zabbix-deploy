@@ -3,6 +3,7 @@
 $this->addCssFile('modules/Tacacs/assets/tacacs.css');
 
 require_once dirname(__DIR__).'/include/ApplyQueue.php';
+require_once dirname(__DIR__).'/include/DateFormat.php';
 $form_action = (new CUrl('zabbix.php'))
 	->setArgument('action', 'tacacs.users');
 
@@ -123,6 +124,7 @@ if (!$is_edit) {
 		_('Description'),
 		_('Status'),
 		_('Created'),
+		_('Last modified'),
 		_('Actions')
 	]);
 
@@ -161,7 +163,8 @@ if (!$is_edit) {
 			$user['username'],
 			$user['description'] !== null ? $user['description'] : '',
 			(int) $user['enabled'] === 1 ? _('Enabled') : _('Disabled'),
-			$user['created_at'],
+			\Modules\Tacacs\DateFormat::dateTime($user['created_at']),
+			\Modules\Tacacs\DateFormat::dateTime($user['updated_at']),
 			(new CDiv($actions))
 
 			        ->addClass('tacacs-user-actions')

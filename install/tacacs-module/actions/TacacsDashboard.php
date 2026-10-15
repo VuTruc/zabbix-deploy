@@ -84,7 +84,7 @@ class TacacsDashboard extends CController {
                  FROM assignments a
                  JOIN users u ON u.id = a.user_id
                  JOIN devices d ON d.id = a.device_id
-                 JOIN policies p ON p.id = a.policy_id
+                 LEFT JOIN policies p ON p.id = a.policy_id
                  ORDER BY u.username, d.name, p.name'
             )->fetchAll();
 

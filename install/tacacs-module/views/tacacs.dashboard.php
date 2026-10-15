@@ -252,7 +252,8 @@ require_once dirname(__DIR__).'/include/VendorProfiles.php';
                         $table->addRow([
                             $assignment['username'],
                             $assignment['device_name'].' ('.$assignment['device_address'].')',
-                            $assignment['policy_name'],
+                            // No policy: the device applies its own level permissions.
+                            $assignment['policy_name'] ?? _('Device level permissions'),
                             $assignment['created_at']
                         ]);
                     }

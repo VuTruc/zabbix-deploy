@@ -48,6 +48,7 @@ for path in \
     "$REPO_DIR/install/tacacs/migrate-assignments-v2.php" \
     "$REPO_DIR/install/tacacs/migrate-policy-rule-action.php" \
     "$REPO_DIR/install/tacacs/migrate-vendor-levels.php" \
+    "$REPO_DIR/install/tacacs/migrate-updated-at.php" \
     "$REPO_DIR/install/tacacs/tests/tacacs-assignment-schema-test.php" \
     "$SOURCE_MODULE/views/js/tacacs.policies.js" \
     "$REPO_DIR/install/tacacs/tacacs-audit-collector.php" \
@@ -196,6 +197,10 @@ log "Applying additive TACACS vendor privilege migration..."
 php "$REPO_DIR/install/tacacs/migrate-vendor-levels.php" "$DB_CONFIG" \
     || die "TACACS vendor privilege migration failed."
 
+log "Applying additive TACACS updated_at migration..."
+php "$REPO_DIR/install/tacacs/migrate-updated-at.php" "$DB_CONFIG" \
+    || die "TACACS updated_at migration failed."
+
 log "Backing up installed Zabbix module..."
 if [[ -d "$MODULE_DIR" ]]; then
     # Keep backups OUTSIDE /usr/share/zabbix/modules: Zabbix scans every
@@ -221,6 +226,7 @@ MODULE_FILES=(
     "assets/tacacs.css"
     "assets/js/tacacs.assignments.js"
     "include/ApplyQueue.php"
+    "include/DateFormat.php"
     "include/Db.php"
     "include/VendorProfiles.php"
     "manifest.json"
@@ -366,6 +372,8 @@ php -l "$REPO_DIR/install/tacacs/migrate-policy-rule-action.php" >/dev/null \
     || die "TACACS policy-rule action migration PHP syntax check failed."
 php -l "$REPO_DIR/install/tacacs/migrate-vendor-levels.php" >/dev/null \
     || die "TACACS vendor privilege migration PHP syntax check failed."
+php -l "$REPO_DIR/install/tacacs/migrate-updated-at.php" >/dev/null \
+    || die "TACACS updated_at migration PHP syntax check failed."
 php "$REPO_DIR/install/tacacs/tests/tacacs-assignment-schema-test.php" \
     || die "TACACS assignment schema contract tests failed."
 php "$REPO_DIR/install/tacacs/tests/tacacs-audit-collector-test.php" \

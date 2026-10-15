@@ -3,6 +3,7 @@
 $this->addCssFile('modules/Tacacs/assets/tacacs.css');
 
 require_once dirname(__DIR__).'/include/ApplyQueue.php';
+require_once dirname(__DIR__).'/include/DateFormat.php';
 require_once dirname(__DIR__).'/include/VendorProfiles.php';
 
 use Modules\Tacacs\VendorProfiles;
@@ -629,6 +630,7 @@ $table->setHeader([
     _('Access Level'),
     _('Command Policy'),
     _('Created'),
+    _('Last modified'),
     _('Actions')
 ]);
 
@@ -669,7 +671,8 @@ foreach ($data['assignments'] as $assignment) {
             : (VendorProfiles::supportsCommandPolicy((string) $assignment['device_vendor'])
                 ? $assignment['policy_name']
                 : $assignment['policy_name'].' '._('(not enforced by this device)')),
-        $assignment['created_at'],
+        \Modules\Tacacs\DateFormat::dateTime($assignment['created_at']),
+        \Modules\Tacacs\DateFormat::dateTime($assignment['updated_at']),
         (new CDiv([$editForm, $deleteForm]))
             ->addClass('tacacs-assignment-actions')
     ]);

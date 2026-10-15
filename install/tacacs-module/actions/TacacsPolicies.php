@@ -559,7 +559,8 @@ class TacacsPolicies extends CController {
                     r.action,
                     r.rule_order,
                     r.enabled,
-                    r.created_at
+                    r.created_at,
+                    r.updated_at
                  FROM policy_rules r
                  JOIN policies p
                    ON p.id = r.policy_id

@@ -690,6 +690,7 @@ class TacacsAssignments extends CController {
                 'SELECT
                     a.id,
                     a.created_at,
+                    a.updated_at,
                     a.access_mode,
                     a.access_level,
                     a.access_custom,

@@ -288,6 +288,7 @@ $table = (new CTableInfo())
         _('SSH'),
         _('Port'),
         _('Interval'),
+        _('Last Backup'),
         _('Next Backup'),
         _('Actions')
     ]);
@@ -332,6 +333,18 @@ foreach ($data['nodes'] as $node) {
     }
     else {
         $next_backup = _('Not configured');
+    }
+
+    // Last run reported by Oxidized: time (DD/MM/YYYY HH:MM:SS) and status.
+    if ($node['last_run'] === null) {
+        $last_backup = '—';
+    }
+    elseif ($node['last_run']['status'] === 'never' || $node['last_run']['time'] === null) {
+        $last_backup = _('Never');
+    }
+    else {
+        $last_backup = date('d/m/Y H:i:s', $node['last_run']['time'])
+            .' ('.$node['last_run']['status'].')';
     }
 
     if ($is_bootstrap) {
@@ -434,6 +447,7 @@ foreach ($data['nodes'] as $node) {
         $ssh_status,
         $node['ssh_port'],
         $interval,
+        $last_backup,
         $next_backup,
         $actions
     ]);
