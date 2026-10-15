@@ -1821,10 +1821,53 @@ main :is(button, .btn, .btn-alt):not(.btn-icon):not(.btn-link):not(.btn-grey):no
 }
 
 .tacacs-apply-bar-notice .tacacs-apply-status {
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    min-height: 36px;
     margin: 0;
+}
+
+/* Apply Manual matches the notice height; Logout matches Apply Manual. */
+main .tacacs-apply-bar .tacacs-apply-manual-button,
+.header-controls .tacacs-assignment-logout-button {
+    height: 36px !important;
+    line-height: 34px !important;
 }
 
 .tacacs-apply-bar form {
     display: flex;
+    margin: 0;
+}
+
+/* Logout lives in the page header (outside <main>), so the uniform button
+ * rule does not reach it; give it the same size and look as Apply Manual. */
+.header-controls .tacacs-assignment-logout-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-width: 80px;
+    height: 26px;
+    margin: 0;
+    padding: 0 12px;
+    font-family: Arial, Tahoma, Verdana, sans-serif;
+    font-size: 12px;
+    font-weight: normal;
+    line-height: 24px;
+    white-space: nowrap;
+    color: #ffffff;
+    background-color: #0275b8;
+    border: 1px solid #0275b8;
+    border-radius: 2px;
+}
+
+.header-controls .tacacs-assignment-logout-button:is(:hover, :focus) {
+    color: #ffffff;
+    background-color: #02659f;
+    border-color: #02659f;
+}
+
+.header-controls form {
     margin: 0;
 }

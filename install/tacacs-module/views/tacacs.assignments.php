@@ -270,7 +270,9 @@ $applyForm->setAction($base_url->getUrl());
 $applyForm->setAttribute('onsubmit', 'return confirm('.json_encode(_('Apply the TACACS+ configuration now and restart tac_plus? TACACS+ login and command authorization are unavailable for a few seconds during the restart.')).');');
 $applyForm->addVar(CSRF_TOKEN_NAME, CCsrfTokenHelper::get('tacacs.assignments'));
 $applyForm->addVar('page_action', 'apply_manual');
-$applyForm->addItem(new CSubmit('submit', _('Apply Manual')));
+$applyForm->addItem(
+    (new CSubmit('submit', _('Apply Manual')))->addClass('tacacs-apply-manual-button')
+);
 
 // Apply notice (only after an Assign/Update/Delete or Apply Manual from this
 // session) and the Apply Manual button share one row.
@@ -293,9 +295,8 @@ $logoutForm->addItem(
         ->addClass('tacacs-assignment-logout-button')
 );
 
-$html_page->addItem(
-    (new CDiv($logoutForm))->addClass('tacacs-assignment-logout-wrap')
-);
+// Logout sits on the page title row, right side.
+$html_page->setControls($logoutForm);
 
 /*
  * Add assignment form.

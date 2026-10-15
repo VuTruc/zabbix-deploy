@@ -161,7 +161,16 @@ class ApplyQueue {
 
         \CSessionHelper::unset([self::SESSION_KEY]);
 
-        return self::statusBox();
+        // Finished result: visible for 5 seconds, then removed.
+        return (new \CDiv([
+            self::statusBox(),
+            new \CScriptTag(
+                'setTimeout(function () {'.
+                    ' var n = document.querySelector(".tacacs-apply-bar-notice .tacacs-apply-status");'.
+                    ' if (n) n.remove();'.
+                ' }, 5000);'
+            )
+        ]));
     }
 
     public static function statusBox(): \CDiv {
