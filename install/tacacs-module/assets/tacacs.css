@@ -1806,3 +1806,25 @@ main :is(button, .btn, .btn-alt):not(.btn-icon):not(.btn-link):not(.btn-grey):no
     cursor: default;
 }
 /* END uniform module buttons v1 */
+
+/* Apply notice on the left, Apply Manual on the right of the same row. */
+.tacacs-apply-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 8px;
+}
+
+.tacacs-apply-bar-notice {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.tacacs-apply-bar-notice .tacacs-apply-status {
+    margin: 0;
+}
+
+.tacacs-apply-bar form {
+    display: flex;
+    margin: 0;
+}

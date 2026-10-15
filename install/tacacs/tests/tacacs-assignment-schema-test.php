@@ -14,6 +14,8 @@ $paths = [
     'migration' => $repo.'/install/tacacs/migrate-assignments-v2.php',
     'vendor_migration' => $repo.'/install/tacacs/migrate-vendor-levels.php',
     'vendor_profiles' => $repo.'/install/tacacs-module/include/VendorProfiles.php',
+    'apply_queue' => $repo.'/install/tacacs-module/include/ApplyQueue.php',
+    'apply_script' => $repo.'/install/tacacs/tacacs-apply-config',
     'devices_controller' => $repo.'/install/tacacs-module/actions/TacacsDevices.php'
 ];
 
@@ -88,6 +90,11 @@ $checks = [
         str_contains($content['controller'], "'edit_id' => 'int32'")
         && str_contains($content['controller'], 'SELECT user_id, device_id FROM assignments WHERE id = :id')
         && str_contains($content['controller'], 'access_custom = :access_custom'),
+    'Users/Devices/Policies apply silently; Apply Manual forces a restart' =>
+        str_contains($content['controller'], "ApplyQueue::request('manual apply', true)")
+        && str_contains($content['devices_controller'], "ApplyQueue::request('devices changed', false, false)")
+        && str_contains($content['apply_queue'], "'force' => \$force")
+        && str_contains($content['apply_script'], 'request_forced'),
     'installer deploys vendor profiles and runs the vendor migration' =>
         str_contains($content['installer'], '"include/VendorProfiles.php"')
         && str_contains($content['installer'], 'migrate-vendor-levels.php')

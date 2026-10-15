@@ -228,8 +228,7 @@ $form->addItem(
 );
 
 $html_page = (new CHtmlPage())
-        ->setTitle(_('TACACS+ Devices'))
-    ->addItem(\Modules\Tacacs\ApplyQueue::statusBox());
+        ->setTitle(_('TACACS+ Devices'));
 
 if (!empty($data['error'])) {
     $html_page->addItem(

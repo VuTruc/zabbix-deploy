@@ -14,8 +14,7 @@ $base_url = (new CUrl('zabbix.php'))
     ->setArgument('action', 'tacacs.assignments');
 
 $html_page = (new CHtmlPage())
-    ->setTitle(_('TACACS+ Assignments'))
-    ->addItem(\Modules\Tacacs\ApplyQueue::statusBox());
+    ->setTitle(_('TACACS+ Assignments'));
 
 $displayError = !empty($data['page_locked'])
     ? ($data['page_error'] ?? null)
@@ -263,6 +262,26 @@ if (!empty($data['page_recovery_code'])) {
             )
     );
 }
+
+// Regenerate tac_plus.conf from the database and always restart tac_plus.
+$applyForm = new CForm();
+$applyForm->setAttribute('method', 'post');
+$applyForm->setAction($base_url->getUrl());
+$applyForm->setAttribute('onsubmit', 'return confirm('.json_encode(_('Apply the TACACS+ configuration now and restart tac_plus? TACACS+ login and command authorization are unavailable for a few seconds during the restart.')).');');
+$applyForm->addVar(CSRF_TOKEN_NAME, CCsrfTokenHelper::get('tacacs.assignments'));
+$applyForm->addVar('page_action', 'apply_manual');
+$applyForm->addItem(new CSubmit('submit', _('Apply Manual')));
+
+// Apply notice (only after an Assign/Update/Delete or Apply Manual from this
+// session) and the Apply Manual button share one row.
+$applyNotice = \Modules\Tacacs\ApplyQueue::notice();
+
+$html_page->addItem(
+    (new CDiv([
+        (new CDiv($applyNotice))->addClass('tacacs-apply-bar-notice'),
+        $applyForm
+    ]))->addClass('tacacs-apply-bar')
+);
 
 $logoutForm = new CForm();
 $logoutForm->setAttribute('method', 'post');

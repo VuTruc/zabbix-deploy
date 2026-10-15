@@ -28,8 +28,7 @@ foreach (($data['rules'] ?? []) as $existingRule) {
 
 
 $html_page = (new CHtmlPage())
-    ->setTitle(_('TACACS+ Policies'))
-    ->addItem(\Modules\Tacacs\ApplyQueue::statusBox());
+    ->setTitle(_('TACACS+ Policies'));
 
 if (!empty($data['error'])) {
     $html_page->addItem(

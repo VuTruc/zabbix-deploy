@@ -11,6 +11,9 @@ namespace Modules\Tacacs;
  * /usr/local/sbin/tacacs-apply-config as root, which regenerates
  * /etc/tac_plus.conf from the database, validates it and restarts tac_plus.
  * The result is written to status.json for display here.
+ *
+ * Every committed change requests an apply. Only Assignments changes and the
+ * Apply Manual button ask for a notice, shown once on the Assignments page.
  */
 class ApplyQueue {
 
@@ -21,15 +24,22 @@ class ApplyQueue {
     /** Seconds after which a pending request is reported as stuck. */
     private const STALE_AFTER = 90;
 
+    /** Session key holding the request whose result is still to be shown. */
+    private const SESSION_KEY = 'tacacs.apply.request';
+
     /**
      * Ask the root service to regenerate and apply the TACACS+ config.
      * Call this only after the database change has been committed.
+     * $force restarts tac_plus even when the generated config is unchanged.
+     * $notify shows the result once on the Assignments page (see notice()).
      */
-    public static function request(string $reason): bool {
+    public static function request(string $reason, bool $force = false, bool $notify = true): bool {
+        $id = gmdate('YmdHis').'-'.bin2hex(random_bytes(4));
         $payload = json_encode([
-            'id' => gmdate('YmdHis').'-'.bin2hex(random_bytes(4)),
+            'id' => $id,
             'requested_at' => time(),
-            'reason' => mb_substr($reason, 0, 100)
+            'reason' => mb_substr($reason, 0, 100),
+            'force' => $force
         ]);
 
         // The installer pre-creates the file (root:<php-fpm group>, 0660);
@@ -52,6 +62,10 @@ class ApplyQueue {
 
         if (!$ok) {
             error_log('[TACACS+] Unable to write apply request file '.self::REQUEST_FILE);
+        }
+
+        if ($notify) {
+            \CSessionHelper::set(self::SESSION_KEY, $id);
         }
 
         return $ok;
@@ -124,6 +138,30 @@ class ApplyQueue {
                 (string) ($status['message'] ?? ''),
             'time' => $finished ?: null
         ];
+    }
+
+    /**
+     * Status of the last apply this session requested, or null when there is
+     * nothing to report. Pending: the page reloads itself to fetch the result.
+     * Finished (ok/failed/stale): shown once, then cleared.
+     */
+    public static function notice(): ?\CTag {
+        if (!\CSessionHelper::has(self::SESSION_KEY)) {
+            return null;
+        }
+
+        $state = self::state();
+
+        if ($state['state'] === 'pending') {
+            return (new \CDiv([
+                self::statusBox(),
+                (new \CScriptTag('setTimeout(function () { location.reload(); }, 4000);'))
+            ]));
+        }
+
+        \CSessionHelper::unset([self::SESSION_KEY]);
+
+        return self::statusBox();
     }
 
     public static function statusBox(): \CDiv {

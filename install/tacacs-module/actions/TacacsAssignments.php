@@ -40,7 +40,7 @@ class TacacsAssignments extends CController {
             'access_level' => 'string',
             'access_custom' => 'string',
             'edit_id' => 'int32',
-            'page_action' => 'in unlock_page,set_page_password,reset_page_password,change_page_password,logout_page',
+            'page_action' => 'in unlock_page,set_page_password,reset_page_password,change_page_password,logout_page,apply_manual',
             'page_password' => 'string',
             'current_page_password' => 'string',
             'new_page_password' => 'string',
@@ -200,6 +200,19 @@ class TacacsAssignments extends CController {
                 $lockoutSeconds = $this->getPagePasswordLockoutSeconds($security);
 
                 try {
+                    if ($pageAction === 'apply_manual') {
+                        if (!$pageUnlocked) {
+                            throw new \InvalidArgumentException(
+                                _('Unlock the Assignment page before applying the configuration.')
+                            );
+                        }
+
+                        // Regenerate and always restart tac_plus, even if unchanged.
+                        ApplyQueue::request('manual apply', true);
+                        $this->redirect();
+                        return;
+                    }
+
                     if ($pageAction === 'logout_page') {
                         // Lock only Assignments; keep the Zabbix login active.
                         \CSessionHelper::unset(['tacacs.assignments.page_auth']);

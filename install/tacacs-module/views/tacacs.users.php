@@ -86,8 +86,7 @@ else {
 }
 
 $html_page = (new CHtmlPage())
-    ->setTitle(_('TACACS+ Users'))
-    ->addItem(\Modules\Tacacs\ApplyQueue::statusBox());
+    ->setTitle(_('TACACS+ Users'));
 
 if (!empty($data['error'])) {
     $html_page->addItem(

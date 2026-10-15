@@ -7,7 +7,6 @@ require_once dirname(__DIR__).'/include/VendorProfiles.php';
 
 (new CHtmlPage())
     ->setTitle(_('TACACS+ Dashboard'))
-    ->addItem(\Modules\Tacacs\ApplyQueue::statusBox())
     ->addItem(
         (new CDiv([
 

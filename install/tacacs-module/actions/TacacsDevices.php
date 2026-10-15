@@ -51,8 +51,9 @@ class TacacsDevices extends CController {
 
     private function redirect(): void {
         // Every redirect in this controller follows a committed DB change:
-        // ask the root apply service to regenerate tac_plus.conf.
-        ApplyQueue::request('devices changed');
+        // ask the root apply service to regenerate tac_plus.conf. No notice is
+        // shown for it; the Assignments page reports only its own applies.
+        ApplyQueue::request('devices changed', false, false);
 
         $url = (new CUrl('zabbix.php'))
             ->setArgument('action', 'tacacs.devices');

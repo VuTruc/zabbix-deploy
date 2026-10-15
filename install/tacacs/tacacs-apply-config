@@ -6,7 +6,8 @@
 # Safety:
 #  - the generator validates with `tac_plus -P` and only then replaces the file;
 #  - the previous config is kept and restored if tac_plus fails to restart;
-#  - tac_plus is restarted only when the generated config actually changed;
+#  - tac_plus is restarted only when the generated config actually changed,
+#    unless the request has "force": true (Apply Manual button);
 #  - nothing secret (keys, hashes, tac_plus -P output) is written to status/journal.
 set -uo pipefail
 
@@ -28,6 +29,10 @@ request_id() {
     php -r '$j = json_decode((string) @file_get_contents($argv[1]), true); echo is_array($j) ? ($j["id"] ?? "") : "";' "$REQUEST_FILE" 2>/dev/null
 }
 
+request_forced() { # prints 1 when the request asks for a restart regardless of changes
+    php -r '$j = json_decode((string) @file_get_contents($argv[1]), true); echo is_array($j) && !empty($j["force"]) ? "1" : "0";' "$REQUEST_FILE" 2>/dev/null
+}
+
 write_status() { # state message request_id
     local tmp group
     group="$(stat -c %G "$APPLY_DIR")"
@@ -44,9 +49,10 @@ sanitize() { # keep generator messages, drop anything that could carry secrets
 }
 
 apply_once() {
-    local req out summary
+    local req out summary forced
     sleep "$DEBOUNCE"               # let a burst of UI changes settle
     req="$(request_id)"
+    forced="$(request_forced)"
 
     [[ -x /usr/sbin/tac_plus && -f "$GENERATOR" ]] \
         || { write_status failed "tac_plus or generator is missing on the server." "$req"; return 1; }
@@ -59,13 +65,17 @@ apply_once() {
     fi
     summary="$(printf '%s\n' "$out" | grep -E '^\[OK\] (Assigned users|Devices|Policies|Rules):' | sed 's/^\[OK\] //' | paste -sd, - | sed 's/,/, /g')"
 
-    if [[ -f "$PREVIOUS" ]] && cmp -s "$PREVIOUS" "$CONFIG"; then
+    if [[ "$forced" != "1" && -f "$PREVIOUS" ]] && cmp -s "$PREVIOUS" "$CONFIG"; then
         write_status ok "Configuration unchanged; tac_plus not restarted. $summary" "$req"
         return 0
     fi
 
     if systemctl restart "$SERVICE" && sleep 1 && systemctl is-active --quiet "$SERVICE"; then
-        write_status ok "Applied and $SERVICE restarted. $summary" "$req"
+        if [[ "$forced" == "1" ]]; then
+            write_status ok "Applied manually and $SERVICE restarted. $summary" "$req"
+        else
+            write_status ok "Applied and $SERVICE restarted. $summary" "$req"
+        fi
         return 0
     fi
 
