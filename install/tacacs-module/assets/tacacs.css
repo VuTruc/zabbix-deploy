@@ -1810,7 +1810,7 @@ main :is(button, .btn, .btn-alt):not(.btn-icon):not(.btn-link):not(.btn-grey):no
 /* Apply notice on the left, Apply Manual on the right of the same row. */
 .tacacs-apply-bar {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     gap: 8px;
     margin: 0 0 8px;
 }
@@ -1828,8 +1828,23 @@ main :is(button, .btn, .btn-alt):not(.btn-icon):not(.btn-link):not(.btn-grey):no
     margin: 0;
 }
 
-/* Apply Manual matches the notice height; Logout matches Apply Manual. */
-main .tacacs-apply-bar .tacacs-apply-manual-button,
+/* Apply Manual stretches to the notice height (36px minimum without one). */
+.tacacs-apply-bar form {
+    display: flex;
+    align-items: stretch;
+    margin: 0;
+}
+
+main .tacacs-apply-bar .tacacs-apply-manual-button {
+    align-self: stretch;
+    height: auto !important;
+    min-height: 36px;
+    line-height: 1.25 !important;
+}
+
+/* Logout lives in the page header (outside <main>), so the uniform button
+ * rule does not reach it. 36px high like Apply Manual without a notice,
+ * styled like the Unlock Assignments button of the lock screen. */
 .header-controls .tacacs-assignment-logout-button {
     display: inline-flex;
     align-items: center;
@@ -1844,8 +1859,8 @@ main .tacacs-apply-bar .tacacs-apply-manual-button,
     line-height: 1.25;
     white-space: nowrap;
     color: #ffffff;
-    /* Same glass look as Unlock Assignments; the dark tint stands in for the
-     * lock screen overlay so the white text stays readable on the header. */
+    /* The dark tint stands in for the lock screen overlay so the white text
+     * stays readable on the light header. */
     background: rgba(15, 23, 42, 0.55);
     border: 1px solid rgba(255, 255, 255, 0.68);
     border-radius: 7px;
