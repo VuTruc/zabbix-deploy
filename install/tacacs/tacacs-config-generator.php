@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 const DB_CONFIG = '/etc/tacacs/tacacs-db.conf';
 const OUTPUT_CONFIG = '/etc/tac_plus.conf';
+// Vendor privilege mapping is shared with the Zabbix frontend module.
+const VENDOR_PROFILES = '/usr/share/zabbix/modules/Tacacs/include/VendorProfiles.php';
 
 function fail(string $message): void
 {
@@ -211,6 +213,14 @@ function atomicWrite(
     }
 }
 
+if (!is_readable(VENDOR_PROFILES)) {
+    fail('Vendor profiles are missing: '.VENDOR_PROFILES.'. Run the TACACS+ installer.');
+}
+
+require_once VENDOR_PROFILES;
+
+use Modules\Tacacs\VendorProfiles;
+
 $db = connectDb();
 
 $users = $db->query(
@@ -256,9 +266,11 @@ $assignments = $db->query(
         a.device_id,
         a.policy_id,
         a.access_mode,
+        a.access_level,
         u.username,
         d.name AS device_name,
         d.address AS device_address,
+        d.vendor AS device_vendor,
         p.name AS policy_name,
         p.enabled AS policy_enabled
      FROM assignments a
@@ -327,6 +339,8 @@ foreach ($users as $user) {
     $addresses = [];
     $policyIds = [];
     $allowAll = false;
+    // service => attribute => [value, device name that requested it]
+    $serviceAttributes = [];
 
     foreach ($userRows as $assignment) {
         $address = trim((string) $assignment['device_address']);
@@ -339,6 +353,26 @@ foreach ($users as $user) {
         }
 
         $addresses[$address] = true;
+
+        $vendor = (string) $assignment['device_vendor'];
+        $level = (string) $assignment['access_level'];
+
+        foreach (VendorProfiles::attributes($vendor, $level) as $service => $attributes) {
+            foreach ($attributes as $attribute => $value) {
+                $previous = $serviceAttributes[$service][$attribute] ?? null;
+
+                if ($previous !== null && $previous[0] !== $value) {
+                    fail(
+                        'User '.$user['username'].' has different '.$service.' '.$attribute.
+                        ' values on '.$previous[1].' and '.$assignment['device_name'].
+                        '. Static tac_plus rules cannot apply different privilege levels per device;'.
+                        ' use the same access level or a separate username.'
+                    );
+                }
+
+                $serviceAttributes[$service][$attribute] = [$value, (string) $assignment['device_name']];
+            }
+        }
 
         if ((string) $assignment['access_mode'] === 'all') {
             $allowAll = true;
@@ -366,7 +400,8 @@ foreach ($users as $user) {
     $authorizationByUser[$userId] = [
         'addresses' => array_keys($addresses),
         'allow_all' => $allowAll,
-        'policy_id' => $policyIds ? (int) array_key_first($policyIds) : null
+        'policy_id' => $policyIds ? (int) array_key_first($policyIds) : null,
+        'service_attributes' => $serviceAttributes
     ];
 }
 
@@ -436,7 +471,27 @@ foreach ($authorizationByUser as $userId => $authorization) {
     // hard-coding vendor-specific privilege attributes such as priv-lvl.
     // This directive must be the first entry in the service block.
     $output[] = '        default attribute = permit';
+
+    foreach ($authorization['service_attributes']['exec'] ?? [] as $attribute => [$value]) {
+        $output[] = '        '.$attribute.' = '.$value;
+    }
+
     $output[] = '    }';
+
+    // Other vendors return their privilege in their own service block.
+    foreach ($authorization['service_attributes'] as $service => $attributes) {
+        if ($service === 'exec') {
+            continue;
+        }
+
+        $output[] = '    service = '.$service.' {';
+
+        foreach ($attributes as $attribute => [$value]) {
+            $output[] = '        '.$attribute.' = '.quoteConfig($value);
+        }
+
+        $output[] = '    }';
+    }
 
     if (!$authorization['allow_all']) {
         if ($authorization['policy_id'] === null) {

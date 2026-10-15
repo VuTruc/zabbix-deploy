@@ -10,9 +10,11 @@ use CUrl;
 
 use Modules\Tacacs\Db;
 use Modules\Tacacs\ApplyQueue;
+use Modules\Tacacs\VendorProfiles;
 
 require_once dirname(__DIR__).'/include/Db.php';
 require_once dirname(__DIR__).'/include/ApplyQueue.php';
+require_once dirname(__DIR__).'/include/VendorProfiles.php';
 
 class TacacsDevices extends CController {
 
@@ -29,6 +31,7 @@ class TacacsDevices extends CController {
             'name' => 'string',
             'address' => 'string',
             'device_type' => 'string',
+            'vendor' => 'string',
             'shared_secret' => 'string',
             'description' => 'string',
             'enabled' => 'in 0,1'
@@ -133,6 +136,9 @@ class TacacsDevices extends CController {
                     $this->getInput('device_type', 'network')
                 );
 
+                $vendor = trim(
+                    $this->getInput('vendor', VendorProfiles::DEFAULT_VENDOR)
+                );
                 $shared_secret = $this->getInput(
                     'shared_secret',
                     ''
@@ -187,6 +193,11 @@ class TacacsDevices extends CController {
                     );
                 }
 
+                if (!VendorProfiles::exists($vendor)) {
+                    throw new \InvalidArgumentException(
+                        _('Invalid vendor.')
+                    );
+                }
                 if ($id === 0 && $shared_secret === '') {
                     throw new \InvalidArgumentException(
                         _('Shared secret is required for a new device.')
@@ -203,6 +214,7 @@ class TacacsDevices extends CController {
                                 name,
                                 address,
                                 device_type,
+                                vendor,
                                 shared_secret,
                                 enabled,
                                 description
@@ -212,6 +224,7 @@ class TacacsDevices extends CController {
                                 :name,
                                 :address,
                                 :device_type,
+                                :vendor,
                                 :shared_secret,
                                 :enabled,
                                 :description
@@ -222,6 +235,7 @@ class TacacsDevices extends CController {
                         ':name' => $name,
                         ':address' => $address,
                         ':device_type' => $device_type,
+                        ':vendor' => $vendor,
                         ':shared_secret' => $shared_secret,
                         ':enabled' => $enabled,
                         ':description' =>
@@ -240,6 +254,7 @@ class TacacsDevices extends CController {
                          SET name = :name,
                              address = :address,
                              device_type = :device_type,
+                             vendor = :vendor,
                              shared_secret = :shared_secret,
                              enabled = :enabled,
                              description = :description
@@ -250,6 +265,7 @@ class TacacsDevices extends CController {
                         ':name' => $name,
                         ':address' => $address,
                         ':device_type' => $device_type,
+                        ':vendor' => $vendor,
                         ':shared_secret' => $shared_secret,
                         ':enabled' => $enabled,
                         ':description' =>
@@ -269,6 +285,7 @@ class TacacsDevices extends CController {
                          SET name = :name,
                              address = :address,
                              device_type = :device_type,
+                             vendor = :vendor,
                              enabled = :enabled,
                              description = :description
                          WHERE id = :id'
@@ -278,6 +295,7 @@ class TacacsDevices extends CController {
                         ':name' => $name,
                         ':address' => $address,
                         ':device_type' => $device_type,
+                        ':vendor' => $vendor,
                         ':enabled' => $enabled,
                         ':description' =>
                             $description !== ''
@@ -315,6 +333,7 @@ class TacacsDevices extends CController {
                         name,
                         address,
                         device_type,
+                        vendor,
                         enabled,
                         description,
                         created_at,
@@ -345,6 +364,7 @@ class TacacsDevices extends CController {
                     name,
                     address,
                     device_type,
+                    vendor,
                     enabled,
                     description,
                     created_at,

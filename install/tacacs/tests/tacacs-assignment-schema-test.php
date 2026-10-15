@@ -11,7 +11,9 @@ $paths = [
     'controller' => $repo.'/install/tacacs-module/actions/TacacsAssignments.php',
     'generator' => $repo.'/install/tacacs/tacacs-config-generator.php',
     'installer' => $repo.'/install/11-tacacs.sh',
-    'migration' => $repo.'/install/tacacs/migrate-assignments-v2.php'
+    'migration' => $repo.'/install/tacacs/migrate-assignments-v2.php',
+    'vendor_migration' => $repo.'/install/tacacs/migrate-vendor-levels.php',
+    'vendor_profiles' => $repo.'/install/tacacs-module/include/VendorProfiles.php'
 ];
 
 $content = [];
@@ -30,7 +32,7 @@ $checks = [
     'schema enforces one assignment per user/device' =>
         str_contains($content['schema'], 'UNIQUE KEY uk_assignments_user_device (user_id, device_id)'),
     'controller stores mode and nullable policy id' =>
-        str_contains($content['controller'], '(user_id, device_id, policy_id, access_mode)')
+        str_contains($content['controller'], '(user_id, device_id, policy_id, access_mode, access_level)')
         && str_contains($content['controller'], "':policy_id' => \$allowAll ? null : \$policyId")
         && str_contains($content['controller'], "':access_mode' => \$allowAll ? 'all' : 'policy'"),
     'generator reads Assignment v2 and skips users without authorization' =>
@@ -46,7 +48,21 @@ $checks = [
         str_contains($content['migration'], 'Duplicate legacy assignments exist')
         || str_contains($content['migration'], 'Duplicate assignments exist'),
     'installer runs assignment migration' =>
-        str_contains($content['installer'], 'migrate-assignments-v2.php')
+        str_contains($content['installer'], 'migrate-assignments-v2.php'),
+    'schema stores device vendor and assignment access level' =>
+        str_contains($content['schema'], "vendor VARCHAR(64) NOT NULL DEFAULT 'generic'")
+        && str_contains($content['schema'], "access_level VARCHAR(32) NOT NULL DEFAULT 'default'"),
+    'controller validates access level against the device vendor' =>
+        str_contains($content['controller'], '(user_id, device_id, policy_id, access_mode, access_level)')
+        && str_contains($content['controller'], "array_key_exists(\$accessLevel, \$vendorProfile['levels'])"),
+    'generator emits vendor attributes and fails on conflicting levels' =>
+        str_contains($content['generator'], 'VendorProfiles::attributes(')
+        && str_contains($content['generator'], 'cannot apply different privilege levels per device'),
+    'vendor profiles stay free of Zabbix-only functions for the CLI generator' =>
+        preg_match('/\b_\(/', $content['vendor_profiles']) === 0,
+    'installer deploys vendor profiles and runs the vendor migration' =>
+        str_contains($content['installer'], '"include/VendorProfiles.php"')
+        && str_contains($content['installer'], 'migrate-vendor-levels.php')
 ];
 
 $failed = [];

@@ -3,6 +3,9 @@
 $this->addCssFile('modules/Tacacs/assets/tacacs.css');
 
 require_once dirname(__DIR__).'/include/ApplyQueue.php';
+require_once dirname(__DIR__).'/include/VendorProfiles.php';
+
+use Modules\Tacacs\VendorProfiles;
 // Keep the module asset loader active; it filters this path from core jsLoader and
 // then adds the registered TACACS assets from manifest.json.
 $this->addJsFile('modules/Tacacs/assets/js/tacacs.assignments.js');
@@ -289,9 +292,48 @@ foreach ($data['users'] as $user) {
 }
 
 $deviceOptions = [];
+$deviceVendors = [];
 foreach ($data['devices'] as $device) {
     $deviceOptions[$device['id']] =
         $device['name'].' ('.$device['address'].')';
+    $deviceVendors[$device['id']] = VendorProfiles::exists((string) $device['vendor'])
+        ? (string) $device['vendor']
+        : VendorProfiles::DEFAULT_VENDOR;
+}
+
+/*
+ * One Access Level select per vendor. JavaScript shows the one matching the
+ * selected device and disables the others so only it is submitted.
+ */
+$accessLevelSelects = [
+    (new CDiv(_('Select a device to see the access levels for its vendor.')))
+        ->addClass('tacacs-device-type-help')
+        ->setAttribute('data-access-level-placeholder', '1')
+];
+
+foreach (VendorProfiles::all() as $vendorKey => $vendor) {
+    $levelSelect = (new CSelect('access_level'))
+        ->setId('access_level_'.$vendorKey)
+        ->setValue($vendor['default_level'])
+        ->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
+        ->setDisabled();
+
+    $levelHelp = [
+        new CTag('span', true, $vendor['label'].': '.$vendor['description'])
+    ];
+
+    foreach ($vendor['levels'] as $levelKey => $level) {
+        $levelSelect->addOption(new CSelectOption($levelKey, $level['label']));
+        $levelHelp[] = new CTag('br');
+        $levelHelp[] = new CTag('span', true, $level['label'].': '.$level['description']);
+    }
+
+    $accessLevelSelects[] = (new CDiv([
+        $levelSelect,
+        (new CDiv($levelHelp))->addClass('tacacs-device-type-help')
+    ]))
+        ->setAttribute('data-access-level-vendor', $vendorKey)
+        ->setAttribute('hidden', 'hidden');
 }
 
 $policyOptions = [];
@@ -378,11 +420,16 @@ $grid = (new CFormGrid())
         )
     ])
     ->addItem([
+        (new CLabel(_('Access Level')))->setAsteriskMark(),
+        new CFormField($accessLevelSelects)
+    ])
+    ->addItem([
         (new CLabel(_('Access Mode')))->setAsteriskMark(),
         new CFormField($accessModeChoices)
     ]);
 
 $form->addItem($grid);
+$form->setAttribute('data-device-vendors', json_encode($deviceVendors));
 
 $policySelectionGrid = (new CFormGrid())
     ->addItem([
@@ -426,6 +473,7 @@ $table = new CTableInfo();
 $table->setHeader([
     _('User'),
     _('Device'),
+    _('Access Level'),
     _('Policy'),
     _('Created'),
     _('Actions')
@@ -450,6 +498,10 @@ foreach ($data['assignments'] as $assignment) {
     $table->addRow([
         $assignment['username'],
         $assignment['device_name'].' ('.$assignment['device_address'].')',
+        VendorProfiles::levelLabel(
+            (string) $assignment['device_vendor'],
+            (string) $assignment['access_level']
+        ),
         $assignment['policy_name'],
         $assignment['created_at'],
         (new CDiv($deleteForm))

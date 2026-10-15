@@ -390,3 +390,54 @@
     }
 })();
 /* END TACACS policy panel visibility fix v1 */
+
+/* BEGIN TACACS vendor access level v1 */
+(function tacacsVendorAccessLevel() {
+    'use strict';
+
+    function initAccessLevel() {
+        var form = document.forms.namedItem('tacacs_assignments_form');
+        if (!form) return;
+
+        var device = form.querySelector('z-select[name="device_id"]');
+        var placeholder = form.querySelector('[data-access-level-placeholder]');
+        var panels = form.querySelectorAll('[data-access-level-vendor]');
+        var vendors = {};
+
+        try {
+            vendors = JSON.parse(form.getAttribute('data-device-vendors') || '{}');
+        }
+        catch (e) {
+            vendors = {};
+        }
+
+        if (!device || !panels.length) return;
+
+        // Show only the selected device's vendor levels. Disabled selects are
+        // not submitted, so the form posts exactly one access_level.
+        function syncAccessLevel() {
+            var vendor = vendors[String(device.value)] || '';
+
+            panels.forEach(function (panel) {
+                var active = panel.getAttribute('data-access-level-vendor') === vendor;
+                var select = panel.querySelector('z-select');
+
+                panel.hidden = !active;
+                if (select) select.disabled = !active;
+            });
+
+            if (placeholder) placeholder.hidden = vendor !== '';
+        }
+
+        device.addEventListener('change', syncAccessLevel);
+        syncAccessLevel();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAccessLevel, {once: true});
+    }
+    else {
+        initAccessLevel();
+    }
+})();
+/* END TACACS vendor access level v1 */

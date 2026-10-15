@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS devices (
     name VARCHAR(128) NOT NULL,
     address VARCHAR(255) NOT NULL,
     device_type VARCHAR(64) NOT NULL DEFAULT 'network',
+    vendor VARCHAR(64) NOT NULL DEFAULT 'generic',
     shared_secret VARCHAR(255) NOT NULL,
     enabled TINYINT(1) NOT NULL DEFAULT 1,
     description VARCHAR(255) DEFAULT NULL,
@@ -151,6 +152,8 @@ CREATE TABLE IF NOT EXISTS assignments (
     device_id BIGINT UNSIGNED NOT NULL,
     policy_id BIGINT UNSIGNED DEFAULT NULL,
     access_mode ENUM('policy','all') NOT NULL DEFAULT 'policy',
+    -- Vendor privilege level; resolved against the device vendor profile.
+    access_level VARCHAR(32) NOT NULL DEFAULT 'default',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uk_assignments_user_device (user_id, device_id),

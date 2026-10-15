@@ -5,8 +5,10 @@ $this->addCssFile('modules/Tacacs/assets/tacacs.css');
 require_once dirname(__DIR__).'/include/ApplyQueue.php';
 
 require_once dirname(__DIR__).'/include/DeviceTypes.php';
+require_once dirname(__DIR__).'/include/VendorProfiles.php';
 
 use Modules\Tacacs\DeviceTypes;
+use Modules\Tacacs\VendorProfiles;
 
 $form_action = (new CUrl('zabbix.php'))
         ->setArgument('action', 'tacacs.devices');
@@ -22,6 +24,16 @@ $current_device_type = $is_edit
 
 if (!array_key_exists($current_device_type, $device_types)) {
         $current_device_type = 'other';
+}
+
+$vendors = VendorProfiles::all();
+
+$current_vendor = $is_edit
+        ? (string) ($edit_device['vendor'] ?? VendorProfiles::DEFAULT_VENDOR)
+        : VendorProfiles::DEFAULT_VENDOR;
+
+if (!array_key_exists($current_vendor, $vendors)) {
+        $current_vendor = VendorProfiles::DEFAULT_VENDOR;
 }
 
 $form = new CForm();
@@ -104,6 +116,33 @@ $device_type_help = (new CDiv([
 ]))
         ->addClass('tacacs-device-type-help');
 
+$vendor_select = (new CSelect('vendor'))
+        ->setValue($current_vendor)
+        ->setFocusableElementId('label-vendor')
+        ->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH);
+
+$vendor_help_lines = [];
+
+foreach ($vendors as $vendor_key => $vendor) {
+        $vendor_select->addOption(
+                new CSelectOption($vendor_key, $vendor['label'])
+        );
+
+        if ($vendor_help_lines) {
+                $vendor_help_lines[] = new CTag('br');
+        }
+
+        $vendor_help_lines[] = new CTag(
+                'span',
+                true,
+                $vendor['label'].': '.$vendor['description']
+        );
+}
+
+// Vendor decides which privilege levels Assignments offers for this device.
+$vendor_help = (new CDiv($vendor_help_lines))
+        ->addClass('tacacs-device-type-help');
+
 $device_form = (new CFormGrid())
         ->addItem([
                 (new CLabel(
@@ -156,6 +195,17 @@ $device_form = (new CFormGrid())
                 new CFormField([
                         $device_type_select,
                         $device_type_help
+                ])
+        ])
+        ->addItem([
+                new CLabel(
+                        _('Vendor'),
+                        'label-vendor'
+                ),
+
+                new CFormField([
+                        $vendor_select,
+                        $vendor_help
                 ])
         ])
         ->addItem([
@@ -276,6 +326,7 @@ if (!$is_edit) {
                 _('Name'),
                 _('Address'),
                 _('Type'),
+                _('Vendor'),
                 _('Status'),
                 _('Description'),
                 _('Actions')
@@ -351,6 +402,9 @@ if (!$is_edit) {
                         $device['name'],
                         $device['address'],
                         $device_type,
+                        VendorProfiles::get(
+                                (string) ($device['vendor'] ?? VendorProfiles::DEFAULT_VENDOR)
+                        )['label'],
                         (int) $device['enabled'] === 1
                                 ? _('Enabled')
                                 : _('Disabled'),

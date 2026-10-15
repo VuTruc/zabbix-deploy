@@ -10,9 +10,11 @@ use CController,
 
 use Modules\Tacacs\Db;
 use Modules\Tacacs\ApplyQueue;
+use Modules\Tacacs\VendorProfiles;
 
 require_once dirname(__DIR__).'/include/Db.php';
 require_once dirname(__DIR__).'/include/ApplyQueue.php';
+require_once dirname(__DIR__).'/include/VendorProfiles.php';
 
 class TacacsAssignments extends CController {
 
@@ -35,6 +37,7 @@ class TacacsAssignments extends CController {
             'device_id' => 'int32',
             'policy_id' => 'string',
             'access_mode' => 'in all,policy',
+            'access_level' => 'string',
             'page_action' => 'in unlock_page,set_page_password,reset_page_password,change_page_password,logout_page',
             'page_password' => 'string',
             'current_page_password' => 'string',
@@ -444,6 +447,7 @@ class TacacsAssignments extends CController {
                 $allowAll = ($accessMode === 'all');
                 $policyChoice = (string) $this->getInput('policy_id', '');
                 $policyId = $allowAll ? null : (int) $policyChoice;
+                $accessLevel = trim((string) $this->getInput('access_level', ''));
 
                 if ($userId < 1 || $deviceId < 1
                     || !in_array($accessMode, ['all', 'policy'], true)
@@ -482,11 +486,26 @@ class TacacsAssignments extends CController {
                         }
                     }
 
+                    // Privilege levels depend on the device vendor.
+                    $stmt = $db->prepare('SELECT vendor FROM devices WHERE id = :id');
+                    $stmt->execute([':id' => $deviceId]);
+                    $vendorProfile = VendorProfiles::get((string) $stmt->fetchColumn());
+
+                    if ($accessLevel === '') {
+                        $accessLevel = $vendorProfile['default_level'];
+                    }
+
+                    if (!array_key_exists($accessLevel, $vendorProfile['levels'])) {
+                        throw new \InvalidArgumentException(
+                            _('The selected access level is not available for this device vendor.')
+                        );
+                    }
+
                     $stmt = $db->prepare(
                         'INSERT INTO assignments
-                            (user_id, device_id, policy_id, access_mode)
+                            (user_id, device_id, policy_id, access_mode, access_level)
                          VALUES
-                            (:user_id, :device_id, :policy_id, :access_mode)'
+                            (:user_id, :device_id, :policy_id, :access_mode, :access_level)'
                     );
 
                     try {
@@ -494,7 +513,8 @@ class TacacsAssignments extends CController {
                             ':user_id' => $userId,
                             ':device_id' => $deviceId,
                             ':policy_id' => $allowAll ? null : $policyId,
-                            ':access_mode' => $allowAll ? 'all' : 'policy'
+                            ':access_mode' => $allowAll ? 'all' : 'policy',
+                            ':access_level' => $accessLevel
                         ]);
                     }
                     catch (\PDOException $e) {
@@ -502,7 +522,7 @@ class TacacsAssignments extends CController {
                             ? (int) $e->errorInfo[1] : 0;
 
                         if ($e->getCode() === '23000' && $mysqlError === 1062) {
-                            $error = _('This user already has an assignment for this device. Delete the existing assignment before changing its access mode or policy.');
+                            $error = _('This user already has an assignment for this device. Delete the existing assignment before changing its access level, access mode or policy.');
                         }
                         else {
                             throw $e;
@@ -533,7 +553,7 @@ class TacacsAssignments extends CController {
             )->fetchAll();
 
             $devices = $db->query(
-                'SELECT id, name, address
+                'SELECT id, name, address, vendor
                  FROM devices
                  WHERE enabled = 1
                  ORDER BY name'
@@ -551,7 +571,9 @@ class TacacsAssignments extends CController {
                     a.id,
                     a.created_at,
                     a.access_mode,
+                    a.access_level,
                     u.username,
+                    d.vendor AS device_vendor,
                     d.name AS device_name,
                     d.address AS device_address,
                     COALESCE(p.name, \'Allow All\') AS policy_name
