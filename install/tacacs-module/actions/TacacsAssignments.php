@@ -444,8 +444,8 @@ class TacacsAssignments extends CController {
                 $error = null;
                 $userId = (int) $this->getInput('user_id', 0);
                 $deviceId = (int) $this->getInput('device_id', 0);
-                // Command Policy is optional: Allow All permits every command at the
-                // granted access level (stored as access_mode 'all').
+                // No policy: the server adds no command rules and the device applies
+                // its own level permissions (stored as access_mode 'all').
                 $policyChoice = trim((string) $this->getInput('policy_id', ''));
                 $allowAll = ($policyChoice === '' || $policyChoice === '0');
                 $accessMode = $allowAll ? 'all' : 'policy';
@@ -456,7 +456,7 @@ class TacacsAssignments extends CController {
                 if ($userId < 1 || $deviceId < 1
                     || !in_array($accessMode, ['all', 'policy'], true)
                     || (!$allowAll && ($policyId === null || $policyId < 1))) {
-                    throw new \InvalidArgumentException(_('Select a user and a device; choose a valid command policy or Allow All.'));
+                    throw new \InvalidArgumentException(_('Select a user and a device; choose a valid command policy.'));
                 }
 
                 $db->beginTransaction();
@@ -498,7 +498,7 @@ class TacacsAssignments extends CController {
 
                     if (!$allowAll && !VendorProfiles::supportsCommandPolicy($deviceVendor)) {
                         throw new \InvalidArgumentException(
-                            _('This device vendor does not send commands to the TACACS+ server, so a command policy would have no effect. Choose Allow All.')
+                            _('This device vendor does not send commands to the TACACS+ server, so a command policy would have no effect. Do not select a policy.')
                         );
                     }
 
@@ -528,9 +528,19 @@ class TacacsAssignments extends CController {
                         $accessCustom = '';
                     }
 
-                    if ($allowAll && VendorProfiles::requiresPolicy($deviceVendor, $accessLevel, $accessCustom)) {
+                    $policyMode = VendorProfiles::policyMode($deviceVendor, $accessLevel, $accessCustom);
+
+                    if ($allowAll && $policyMode === 'required') {
                         throw new \InvalidArgumentException(
-                            _('Custom Mode runs only the commands in a Command Policy. Choose a policy instead of Allow All.')
+                            _('Custom Mode runs only the commands allowed by a Command Policy. Select a policy.')
+                        );
+                    }
+
+                    // Vendor-level check above covers platforms without command authorization.
+                    if (!$allowAll && $policyMode === 'none'
+                        && VendorProfiles::supportsCommandPolicy($deviceVendor)) {
+                        throw new \InvalidArgumentException(
+                            _('This access level uses the device level permissions; a Command Policy applies only to Custom Mode.')
                         );
                     }
 

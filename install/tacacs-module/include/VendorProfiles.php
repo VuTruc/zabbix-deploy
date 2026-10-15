@@ -18,8 +18,10 @@ namespace Modules\Tacacs;
  *
  * command_authorization: the device sends each command to the server, so a
  * command Policy is enforced. Without it a Policy would have no effect.
- * requires_policy: the level is only meaningful with a command Policy
- * (Cisco Custom = priv-lvl 7 limited to the Policy's commands).
+ * policy (per level): 'optional' (default) lets the user pick a Policy or
+ * no policy; 'none' hides the Policy because the device applies its own
+ * level permissions (Cisco level 1/15); 'required' lists only Policies
+ * (Cisco Custom Mode = priv-lvl 7 limited to the Policy's command rules).
  * verified: false marks attribute sets taken from documentation only.
  *
  * Add a platform only with a documented attribute set.
@@ -51,12 +53,14 @@ class VendorProfiles {
         $ciscoLevels = [
             'readonly' => [
                 'label' => 'User EXEC Mode (Level 1)',
-                'description' => 'priv-lvl 1: chỉ xem, không vào được enable.',
+                'description' => 'priv-lvl 1: chỉ xem, không vào được enable. Quyền theo level, không áp dụng policy.',
+                'policy' => 'none',
                 'blocks' => [self::block('exec', 'priv-lvl', '1', false)]
             ],
             'admin' => [
                 'label' => 'Privileged EXEC Mode (Level 15)',
-                'description' => 'priv-lvl 15: toàn quyền, vào thẳng chế độ enable.',
+                'description' => 'priv-lvl 15: toàn quyền, vào thẳng chế độ enable. Quyền theo level, không áp dụng policy.',
+                'policy' => 'none',
                 'blocks' => [self::block('exec', 'priv-lvl', '15', false)]
             ]
         ];
@@ -66,7 +70,7 @@ class VendorProfiles {
             'custom_policy' => [
                 'label' => 'Custom Mode',
                 'description' => 'priv-lvl 7: chỉ chạy các lệnh trong Command Policy (bắt buộc chọn policy). Lệnh mà thiết bị đặt ở level 15 (vd: configure terminal) vẫn bị chặn nếu trên thiết bị chưa gán xuống level 7.',
-                'requires_policy' => true,
+                'policy' => 'required',
                 'blocks' => [self::block('exec', 'priv-lvl', '7', false)]
             ]
         ];
@@ -226,11 +230,26 @@ class VendorProfiles {
         return self::get($vendor)['command_authorization'];
     }
 
-    public static function requiresPolicy(string $vendor, string $level, string $custom = ''): bool {
+    /**
+     * 'none', 'optional' or 'required'. A platform without command
+     * authorization never enforces a Policy, so it is always 'none'.
+     */
+    public static function policyMode(string $vendor, string $level, string $custom = ''): string {
         $profile = self::get($vendor);
+
+        if (!$profile['command_authorization']) {
+            return 'none';
+        }
+
         $resolved = self::resolveLevel($vendor, $level, $custom);
 
-        return !empty($profile['levels'][$resolved]['requires_policy']);
+        return $resolved === self::CUSTOM_LEVEL || !isset($profile['levels'][$resolved]['policy'])
+            ? 'optional'
+            : $profile['levels'][$resolved]['policy'];
+    }
+
+    public static function requiresPolicy(string $vendor, string $level, string $custom = ''): bool {
+        return self::policyMode($vendor, $level, $custom) === 'required';
     }
 
     public static function supportsCustom(string $vendor): bool {

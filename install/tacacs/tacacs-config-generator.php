@@ -304,7 +304,7 @@ foreach ($assignments as $assignment) {
 
     if ($mode === 'all') {
         if ($assignment['policy_id'] !== null) {
-            fail('Allow All assignment must not reference a policy for user '.$assignment['username'].'.');
+            fail('Assignment without a policy must not reference a policy for user '.$assignment['username'].'.');
         }
     }
     else {
@@ -422,7 +422,7 @@ foreach ($users as $user) {
     if ($allowAll && $policyIds) {
         fail(
             'User '.$user['username'].
-            ' has both Allow All and policy assignments across devices. '.
+            ' has both device-level (no policy) and policy assignments across devices. '.
             'Static tac_plus rules cannot safely isolate those permissions.'
         );
     }

@@ -361,36 +361,38 @@ foreach ($data['policies'] as $policy) {
     $policyOptions[$policy['id']] = $policy['name'];
 }
 
-// Command Policy is optional. Allow All permits every command at the access level.
+// Command Policy holds specific command rules. It is shown only for levels that
+// use one: required for Cisco Custom Mode, optional where no level defines
+// the permissions (Generic, NX-OS). Level 1/15 and similar levels hide it.
 $policySelect = (new CSelect('policy_id'))
     ->setValue('')
     ->setFocusableElementId('label-policy_id')
     ->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
-    ->addOption(new CSelectOption('', _('Allow All')))
+    ->addOption(new CSelectOption('', _('No policy')))
     ->addOptions(CSelect::createOptionsFromArray($policyOptions));
 
 $policyHelp = [
-    (new CDiv(_('Limits individual commands. Only devices that send each command to the TACACS+ server enforce it.')))
+    (new CDiv(_('Optional: limits individual commands with the policy rules. Only devices that send each command to the TACACS+ server enforce it.')))
         ->addClass('tacacs-device-type-help')
-        ->setAttribute('data-policy-supported', '1'),
-    (new CDiv(_('This device vendor does not send commands to the TACACS+ server, so a command policy has no effect. Use the access level to limit permissions.')))
-        ->addClass('tacacs-device-type-help')
-        ->setAttribute('data-policy-unsupported', '1')
+        ->setAttribute('data-policy-note', 'optional')
         ->setAttribute('hidden', 'hidden'),
-    (new CDiv(_('Custom Mode runs only the commands in the selected policy.')))
+    (new CDiv(_('Custom Mode runs only the commands allowed by the selected policy rules.')))
         ->addClass('tacacs-device-type-help')
-        ->setAttribute('data-policy-required', '1')
+        ->setAttribute('data-policy-note', 'required')
         ->setAttribute('hidden', 'hidden')
 ];
 
-$commandPolicyVendors = [];
-$policyRequiredLevels = [];
+// vendor => level => none|optional|required
+$policyModes = [];
 foreach (VendorProfiles::all() as $vendorKey => $vendor) {
-    $commandPolicyVendors[$vendorKey] = $vendor['command_authorization'];
-    $policyRequiredLevels[$vendorKey] = array_keys(array_filter(
-        $vendor['levels'],
-        static fn(array $level): bool => !empty($level['requires_policy'])
-    ));
+    foreach (array_keys($vendor['levels']) as $levelKey) {
+        $policyModes[$vendorKey][$levelKey] = VendorProfiles::policyMode($vendorKey, $levelKey);
+    }
+
+    if (isset($vendor['custom'])) {
+        $policyModes[$vendorKey][VendorProfiles::CUSTOM_LEVEL] =
+            VendorProfiles::policyMode($vendorKey, VendorProfiles::CUSTOM_LEVEL, 'x');
+    }
 }
 
 $grid = (new CFormGrid())
@@ -419,14 +421,17 @@ $grid = (new CFormGrid())
         new CFormField($accessLevelSelects)
     ])
     ->addItem([
-        new CLabel(_('Command Policy'), 'label-policy_id'),
-        new CFormField(array_merge([$policySelect], $policyHelp))
+        (new CLabel(_('Command Policy'), 'label-policy_id'))
+            ->setAttribute('data-policy-row', '1')
+            ->setAttribute('style', 'display: none;'),
+        (new CFormField(array_merge([$policySelect], $policyHelp)))
+            ->setAttribute('data-policy-row', '1')
+            ->setAttribute('style', 'display: none;')
     ]);
 
 $form->addItem($grid);
 $form->setAttribute('data-device-vendors', json_encode($deviceVendors));
-$form->setAttribute('data-command-policy-vendors', json_encode($commandPolicyVendors));
-$form->setAttribute('data-policy-required-levels', json_encode($policyRequiredLevels));
+$form->setAttribute('data-policy-modes', json_encode($policyModes));
 $form->addVar(CSRF_TOKEN_NAME, CCsrfTokenHelper::get('tacacs.assignments'));
 $form->addVar('assign', 1);
 $form->addItem(
@@ -458,22 +463,18 @@ $accessLevelScript = <<<'JS'
     var custom = form.querySelector('[data-access-custom]');
     var customInput = custom ? custom.querySelector('input[name="access_custom"]') : null;
     var policy = form.querySelector('z-select[name="policy_id"]');
-    var policySupported = form.querySelector('[data-policy-supported]');
-    var policyUnsupported = form.querySelector('[data-policy-unsupported]');
-    var policyRequired = form.querySelector('[data-policy-required]');
+    var policyRows = form.querySelectorAll('[data-policy-row]');
+    var policyNotes = form.querySelectorAll('[data-policy-note]');
     var vendors = {};
-    var commandPolicyVendors = {};
-    var policyRequiredLevels = {};
+    var policyModes = {};
 
     try {
         vendors = JSON.parse(form.getAttribute('data-device-vendors') || '{}');
-        commandPolicyVendors = JSON.parse(form.getAttribute('data-command-policy-vendors') || '{}');
-        policyRequiredLevels = JSON.parse(form.getAttribute('data-policy-required-levels') || '{}');
+        policyModes = JSON.parse(form.getAttribute('data-policy-modes') || '{}');
     }
     catch (e) {
         vendors = {};
-        commandPolicyVendors = {};
-        policyRequiredLevels = {};
+        policyModes = {};
     }
 
     if (!device || !panels.length) return;
@@ -505,33 +506,39 @@ $accessLevelScript = <<<'JS'
 
         if (placeholder) placeholder.hidden = vendor !== '';
 
-        // A policy only works on devices that authorize each command.
-        var policyAllowed = vendor === '' || commandPolicyVendors[vendor] !== false;
+        // none: the level defines the permissions, hide the policy row.
+        // required: Custom Mode, only policies. optional: policy or No policy.
+        var mode = vendor !== '' ? ((policyModes[vendor] || {})[activeLevel] || 'none') : 'none';
+        var showPolicy = mode !== 'none';
+
+        policyRows.forEach(function (row) {
+            row.style.display = showPolicy ? '' : 'none';
+        });
+
+        policyNotes.forEach(function (note) {
+            note.hidden = note.getAttribute('data-policy-note') !== mode;
+        });
 
         if (policy) {
-            if (!policyAllowed) policy.value = '';
-            policy.toggleAttribute('disabled', !policyAllowed);
-        }
-        var needsPolicy = (policyRequiredLevels[vendor] || []).indexOf(activeLevel) !== -1;
+            // Disabled selects are not submitted: no policy is posted for 'none'.
+            policy.toggleAttribute('disabled', !showPolicy);
 
-        // Custom Mode lists only policies: hide Allow All and move off it.
-        if (policy && typeof policy.getOptionByValue === 'function') {
-            var allowAll = policy.getOptionByValue('');
+            if (typeof policy.getOptionByValue === 'function') {
+                var noPolicy = policy.getOptionByValue('');
 
-            if (allowAll) allowAll.hidden = needsPolicy;
+                if (noPolicy) noPolicy.hidden = mode === 'required';
 
-            if (needsPolicy && policy.value === '') {
-                var firstPolicy = policy.getOptions().find(function (option) {
-                    return option.value !== '';
-                });
+                if (mode === 'required' && policy.value === '') {
+                    var firstPolicy = policy.getOptions().find(function (option) {
+                        return option.value !== '';
+                    });
 
-                if (firstPolicy) policy.value = firstPolicy.value;
+                    if (firstPolicy) policy.value = firstPolicy.value;
+                }
             }
-        }
 
-        if (policySupported) policySupported.hidden = !policyAllowed || needsPolicy;
-        if (policyUnsupported) policyUnsupported.hidden = policyAllowed;
-        if (policyRequired) policyRequired.hidden = !needsPolicy;
+            if (mode === 'none') policy.value = '';
+        }
     }
 
     device.addEventListener('change', syncAccessLevel);
@@ -587,7 +594,7 @@ foreach ($data['assignments'] as $assignment) {
             (string) ($assignment['access_custom'] ?? '')
         ),
         $assignment['policy_name'] === null
-            ? _('Allow All')
+            ? _('Device level permissions')
             : (VendorProfiles::supportsCommandPolicy((string) $assignment['device_vendor'])
                 ? $assignment['policy_name']
                 : $assignment['policy_name'].' '._('(not enforced by this device)')),
