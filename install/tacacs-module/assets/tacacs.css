@@ -1920,3 +1920,45 @@ main .tacacs-apply-bar .tacacs-apply-manual-button,
         width: 288px !important;
     }
 }
+
+/* Every lock screen button (Unlock Assignments, Reset Password toggle and the
+ * submit buttons of the reset / set-password forms) uses the Unlock look. */
+.tacacs-assignment-lock-screen :is(.tacacs-lock-action-button, .tacacs-reset-summary, .form-actions button, button[type="submit"]) {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box;
+    min-width: 160px;
+    height: 38px !important;
+    min-height: 38px;
+    margin: 0 !important;
+    padding: 0 14px !important;
+    font-family: Arial, Tahoma, Verdana, sans-serif;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    line-height: 1.25 !important;
+    white-space: nowrap;
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.13) !important;
+    border: 1px solid rgba(255, 255, 255, 0.68) !important;
+    border-radius: 7px !important;
+    box-shadow: none !important;
+    cursor: pointer;
+}
+
+.tacacs-assignment-lock-screen :is(.tacacs-lock-action-button, .tacacs-reset-summary, .form-actions button, button[type="submit"]):is(:hover, :focus) {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.25) !important;
+    border-color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.tacacs-assignment-lock-screen :is(.tacacs-lock-action-button, .tacacs-reset-summary, .form-actions button, button[type="submit"]):focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+    .tacacs-assignment-lock-screen :is(.tacacs-lock-action-button, .tacacs-reset-summary, .form-actions button, button[type="submit"]) {
+        min-width: 140px;
+    }
+}
