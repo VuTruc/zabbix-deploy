@@ -444,7 +444,7 @@ class TacacsAssignments extends CController {
                 $error = null;
                 $userId = (int) $this->getInput('user_id', 0);
                 $deviceId = (int) $this->getInput('device_id', 0);
-                // Command Policy is optional: None allows every command at the
+                // Command Policy is optional: Allow All permits every command at the
                 // granted access level (stored as access_mode 'all').
                 $policyChoice = trim((string) $this->getInput('policy_id', ''));
                 $allowAll = ($policyChoice === '' || $policyChoice === '0');
@@ -456,7 +456,7 @@ class TacacsAssignments extends CController {
                 if ($userId < 1 || $deviceId < 1
                     || !in_array($accessMode, ['all', 'policy'], true)
                     || (!$allowAll && ($policyId === null || $policyId < 1))) {
-                    throw new \InvalidArgumentException(_('Select a user and a device; choose a valid command policy or None.'));
+                    throw new \InvalidArgumentException(_('Select a user and a device; choose a valid command policy or Allow All.'));
                 }
 
                 $db->beginTransaction();
@@ -498,7 +498,7 @@ class TacacsAssignments extends CController {
 
                     if (!$allowAll && !VendorProfiles::supportsCommandPolicy($deviceVendor)) {
                         throw new \InvalidArgumentException(
-                            _('This device vendor does not send commands to the TACACS+ server, so a command policy would have no effect. Choose None.')
+                            _('This device vendor does not send commands to the TACACS+ server, so a command policy would have no effect. Choose Allow All.')
                         );
                     }
 

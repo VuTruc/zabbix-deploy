@@ -361,12 +361,12 @@ foreach ($data['policies'] as $policy) {
     $policyOptions[$policy['id']] = $policy['name'];
 }
 
-// Command Policy is optional. None allows every command at the access level.
+// Command Policy is optional. Allow All permits every command at the access level.
 $policySelect = (new CSelect('policy_id'))
     ->setValue('')
     ->setFocusableElementId('label-policy_id')
     ->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
-    ->addOption(new CSelectOption('', _('None (all commands at the access level)')))
+    ->addOption(new CSelectOption('', _('Allow All')))
     ->addOptions(CSelect::createOptionsFromArray($policyOptions));
 
 $policyHelp = [
@@ -553,7 +553,7 @@ foreach ($data['assignments'] as $assignment) {
             (string) ($assignment['access_custom'] ?? '')
         ),
         $assignment['policy_name'] === null
-            ? _('None')
+            ? _('Allow All')
             : (VendorProfiles::supportsCommandPolicy((string) $assignment['device_vendor'])
                 ? $assignment['policy_name']
                 : $assignment['policy_name'].' '._('(not enforced by this device)')),
