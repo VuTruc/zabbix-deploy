@@ -430,7 +430,17 @@ foreach ($data['nodes'] as $node) {
                 )
             );
 
+        // Current configuration, versions and downloads inside Zabbix.
+        $config_url = (new CUrl('zabbix.php'))
+            ->setArgument('action', 'oxidized.config')
+            ->setArgument('node', $node['name'])
+            ->getUrl();
+
         $actions = (new CDiv([
+            (new CLink(
+                _('Config'),
+                $config_url
+            ))->addClass('btn'),
             (new CLink(
                 _('Edit'),
                 $edit_url

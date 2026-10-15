@@ -10,6 +10,14 @@
         "oxidized.nodes": {
             "class": "OxidizedNodes",
             "view": "oxidized.nodes"
+        },
+        "oxidized.config": {
+            "class": "OxidizedConfig",
+            "view": "oxidized.config"
+        },
+        "oxidized.config.download": {
+            "class": "OxidizedConfigDownload",
+            "view": null
         }
     }
 }
