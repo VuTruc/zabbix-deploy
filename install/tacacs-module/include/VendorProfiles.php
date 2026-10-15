@@ -6,8 +6,11 @@ namespace Modules\Tacacs;
  * Vendor-specific privilege mapping.
  *
  * Shared by the frontend and the CLI config generator, so it must stay plain
- * data: no Zabbix functions such as the gettext wrapper here. Each access level lists the
- * tac_plus service blocks and AV pairs returned to the device.
+ * data: no Zabbix functions such as the gettext wrapper here. Each access
+ * level lists the tac_plus service blocks and AV pairs returned to the device.
+ *
+ * command_authorization: the device sends each command to the server, so a
+ * command Policy is enforced. Without it a Policy would have no effect.
  *
  * Add a vendor only with a documented attribute set and a device to test it.
  */
@@ -34,6 +37,8 @@ class VendorProfiles {
             'generic' => [
                 'label' => 'Generic',
                 'description' => 'Không gửi thuộc tính phân quyền; thiết bị tự quyết định mức quyền.',
+                // Unknown device: a Policy is the only control, keep it available.
+                'command_authorization' => true,
                 'default_level' => 'device',
                 'levels' => [
                     'device' => [
@@ -45,17 +50,30 @@ class VendorProfiles {
             ],
             'cisco_ios' => [
                 'label' => 'Cisco IOS/IOS-XE',
-                'description' => 'Thiết bị cần: aaa authorization exec <list> group tacacs+.',
+                'description' => 'Thiết bị cần: aaa authorization exec <list> group tacacs+. Policy cần: aaa authorization commands <level> <list> group tacacs+.',
+                'command_authorization' => true,
                 'default_level' => 'readonly',
                 'levels' => $ciscoLevels
             ],
             'cisco_smb' => [
-                'label' => 'Cisco SMB',
-                'description' => 'Thiết bị cần: aaa authentication login authorization <list> tacacs local.',
+                'label' => 'Cisco SMB (Sx350/CBS)',
+                'description' => 'Thiết bị cần: aaa authentication login authorization <list> tacacs local. Không duyệt từng lệnh qua TACACS+, nên Policy không có tác dụng.',
+                'command_authorization' => false,
+                'default_level' => 'readonly',
+                'levels' => $ciscoLevels
+            ],
+            'cisco_c1300' => [
+                'label' => 'Cisco C1300',
+                'description' => 'Thiết bị cần: aaa authentication login authorization <list> tacacs local. Policy cần firmware 4.1.7.17+ và aaa authorization commands <level> <list> tacacs.',
+                'command_authorization' => true,
                 'default_level' => 'readonly',
                 'levels' => $ciscoLevels
             ]
         ];
+    }
+
+    public static function supportsCommandPolicy(string $vendor): bool {
+        return self::get($vendor)['command_authorization'];
     }
 
     public static function exists(string $vendor): bool {

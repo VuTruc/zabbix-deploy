@@ -341,62 +341,28 @@ foreach ($data['policies'] as $policy) {
     $policyOptions[$policy['id']] = $policy['name'];
 }
 
-$allowAllRadio = (new CTag('input', false))
-    ->setAttribute('type', 'radio')
-    ->setAttribute('name', 'access_mode')
-    ->setAttribute('value', 'all')
-    ->setAttribute('id', 'tacacs-assignment-mode-all')
-    ->setAttribute('required', 'required');
+// Command Policy is optional. None allows every command at the access level.
+$policySelect = (new CSelect('policy_id'))
+    ->setValue('')
+    ->setFocusableElementId('label-policy_id')
+    ->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
+    ->addOption(new CSelectOption('', _('None (all commands at the access level)')))
+    ->addOptions(CSelect::createOptionsFromArray($policyOptions));
 
-$selectPolicyRadio = (new CTag('input', false))
-    ->setAttribute('type', 'radio')
-    ->setAttribute('name', 'access_mode')
-    ->setAttribute('value', 'policy')
-    ->setAttribute('id', 'tacacs-assignment-mode-policy')
-    ->setAttribute('required', 'required');
+$policyHelp = [
+    (new CDiv(_('Limits individual commands. Only devices that send each command to the TACACS+ server enforce it.')))
+        ->addClass('tacacs-device-type-help')
+        ->setAttribute('data-policy-supported', '1'),
+    (new CDiv(_('This device vendor does not send commands to the TACACS+ server, so a command policy has no effect. Use the access level to limit permissions.')))
+        ->addClass('tacacs-device-type-help')
+        ->setAttribute('data-policy-unsupported', '1')
+        ->setAttribute('hidden', 'hidden')
+];
 
-$allowAllCard = (new CTag('label', true))
-    ->addClass('tacacs-assignment-mode-option')
-    ->setAttribute('for', 'tacacs-assignment-mode-all')
-    ->addItem($allowAllRadio)
-    ->addItem(
-        (new CTag('span', true))
-            ->addClass('tacacs-assignment-mode-option-content')
-            ->addItem(
-                (new CTag('strong', true, _('Allow All')))
-                    ->addClass('tacacs-assignment-mode-title')
-            )
-            ->addItem(
-                (new CTag('span', true, _('Allow all commands on the assigned device.')))
-                    ->addClass('tacacs-assignment-mode-description')
-            )
-    );
-
-$selectPolicyCard = (new CTag('label', true))
-    ->addClass('tacacs-assignment-mode-option')
-    ->setAttribute('for', 'tacacs-assignment-mode-policy')
-    ->addItem($selectPolicyRadio)
-    ->addItem(
-        (new CTag('span', true))
-            ->addClass('tacacs-assignment-mode-option-content')
-            ->addItem(
-                (new CTag('strong', true, _('Select a Policy')))
-                    ->addClass('tacacs-assignment-mode-title')
-            )
-            ->addItem(
-                (new CTag('span', true, _('Choose a policy from the list shown below.')))
-                    ->addClass('tacacs-assignment-mode-description')
-            )
-    );
-
-$accessModeChoices = (new CDiv([
-    $allowAllCard,
-    $selectPolicyCard
-]))
-    ->addClass('tacacs-assignment-mode-choices')
-    ->setAttribute('role', 'radiogroup')
-    ->setAttribute('aria-label', _('Access Mode'));
-
+$commandPolicyVendors = [];
+foreach (VendorProfiles::all() as $vendorKey => $vendor) {
+    $commandPolicyVendors[$vendorKey] = $vendor['command_authorization'];
+}
 
 $grid = (new CFormGrid())
     ->addItem([
@@ -424,32 +390,13 @@ $grid = (new CFormGrid())
         new CFormField($accessLevelSelects)
     ])
     ->addItem([
-        (new CLabel(_('Access Mode')))->setAsteriskMark(),
-        new CFormField($accessModeChoices)
+        new CLabel(_('Command Policy'), 'label-policy_id'),
+        new CFormField(array_merge([$policySelect], $policyHelp))
     ]);
 
 $form->addItem($grid);
 $form->setAttribute('data-device-vendors', json_encode($deviceVendors));
-
-$policySelectionGrid = (new CFormGrid())
-    ->addItem([
-        (new CLabel(_('Policy'), 'policy_id'))->setAsteriskMark(),
-        new CFormField(
-            (new CSelect('policy_id'))
-                ->setValue('')
-                ->addOptions(
-                    CSelect::createOptionsFromArray($policyOptions)
-                )
-        )
-    ]);
-
-$policySelection = (new CDiv($policySelectionGrid))
-    ->addClass('tacacs-assignment-policy-selection')
-    ->setAttribute('id', 'tacacs-assignment-policy-selection')
-    ->setAttribute('style', 'margin-top: 8px !important; padding-top: 0 !important;')
-    ->setAttribute('hidden', 'hidden');
-
-$form->addItem($policySelection);
+$form->setAttribute('data-command-policy-vendors', json_encode($commandPolicyVendors));
 $form->addVar(CSRF_TOKEN_NAME, CCsrfTokenHelper::get('tacacs.assignments'));
 $form->addVar('assign', 1);
 $form->addItem(
@@ -478,13 +425,19 @@ $accessLevelScript = <<<'JS'
     var device = form.querySelector('z-select[name="device_id"]');
     var placeholder = form.querySelector('[data-access-level-placeholder]');
     var panels = form.querySelectorAll('[data-access-level-vendor]');
+    var policy = form.querySelector('z-select[name="policy_id"]');
+    var policySupported = form.querySelector('[data-policy-supported]');
+    var policyUnsupported = form.querySelector('[data-policy-unsupported]');
     var vendors = {};
+    var commandPolicyVendors = {};
 
     try {
         vendors = JSON.parse(form.getAttribute('data-device-vendors') || '{}');
+        commandPolicyVendors = JSON.parse(form.getAttribute('data-command-policy-vendors') || '{}');
     }
     catch (e) {
         vendors = {};
+        commandPolicyVendors = {};
     }
 
     if (!device || !panels.length) return;
@@ -502,6 +455,16 @@ $accessLevelScript = <<<'JS'
         });
 
         if (placeholder) placeholder.hidden = vendor !== '';
+
+        // A policy only works on devices that authorize each command.
+        var policyAllowed = vendor === '' || commandPolicyVendors[vendor] !== false;
+
+        if (policy) {
+            if (!policyAllowed) policy.value = '';
+            policy.toggleAttribute('disabled', !policyAllowed);
+        }
+        if (policySupported) policySupported.hidden = !policyAllowed;
+        if (policyUnsupported) policyUnsupported.hidden = policyAllowed;
     }
 
     device.addEventListener('change', syncAccessLevel);
@@ -523,7 +486,7 @@ $table->setHeader([
     _('User'),
     _('Device'),
     _('Access Level'),
-    _('Policy'),
+    _('Command Policy'),
     _('Created'),
     _('Actions')
 ]);
@@ -551,7 +514,11 @@ foreach ($data['assignments'] as $assignment) {
             (string) $assignment['device_vendor'],
             (string) $assignment['access_level']
         ),
-        $assignment['policy_name'],
+        $assignment['policy_name'] === null
+            ? _('None')
+            : (VendorProfiles::supportsCommandPolicy((string) $assignment['device_vendor'])
+                ? $assignment['policy_name']
+                : $assignment['policy_name'].' '._('(not enforced by this device)')),
         $assignment['created_at'],
         (new CDiv($deleteForm))
             ->addClass('tacacs-assignment-actions')

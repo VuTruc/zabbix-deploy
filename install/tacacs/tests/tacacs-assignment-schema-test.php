@@ -60,6 +60,10 @@ $checks = [
         && str_contains($content['generator'], 'cannot apply different privilege levels per device'),
     'vendor profiles stay free of Zabbix-only functions for the CLI generator' =>
         preg_match('/\b_\(/', $content['vendor_profiles']) === 0,
+    'command policy is optional and blocked for vendors without command authorization' =>
+        str_contains($content['controller'], "\$allowAll = (\$policyChoice === '' || \$policyChoice === '0')")
+        && str_contains($content['controller'], 'VendorProfiles::supportsCommandPolicy(')
+        && str_contains($content['vendor_profiles'], "'command_authorization' => false"),
     'installer deploys vendor profiles and runs the vendor migration' =>
         str_contains($content['installer'], '"include/VendorProfiles.php"')
         && str_contains($content['installer'], 'migrate-vendor-levels.php')
