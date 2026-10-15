@@ -376,12 +376,21 @@ $policyHelp = [
     (new CDiv(_('This device vendor does not send commands to the TACACS+ server, so a command policy has no effect. Use the access level to limit permissions.')))
         ->addClass('tacacs-device-type-help')
         ->setAttribute('data-policy-unsupported', '1')
+        ->setAttribute('hidden', 'hidden'),
+    (new CDiv(_('The Custom access level runs only the commands in the selected policy. Allow All is not accepted.')))
+        ->addClass('tacacs-device-type-help')
+        ->setAttribute('data-policy-required', '1')
         ->setAttribute('hidden', 'hidden')
 ];
 
 $commandPolicyVendors = [];
+$policyRequiredLevels = [];
 foreach (VendorProfiles::all() as $vendorKey => $vendor) {
     $commandPolicyVendors[$vendorKey] = $vendor['command_authorization'];
+    $policyRequiredLevels[$vendorKey] = array_keys(array_filter(
+        $vendor['levels'],
+        static fn(array $level): bool => !empty($level['requires_policy'])
+    ));
 }
 
 $grid = (new CFormGrid())
@@ -417,6 +426,7 @@ $grid = (new CFormGrid())
 $form->addItem($grid);
 $form->setAttribute('data-device-vendors', json_encode($deviceVendors));
 $form->setAttribute('data-command-policy-vendors', json_encode($commandPolicyVendors));
+$form->setAttribute('data-policy-required-levels', json_encode($policyRequiredLevels));
 $form->addVar(CSRF_TOKEN_NAME, CCsrfTokenHelper::get('tacacs.assignments'));
 $form->addVar('assign', 1);
 $form->addItem(
@@ -450,16 +460,20 @@ $accessLevelScript = <<<'JS'
     var policy = form.querySelector('z-select[name="policy_id"]');
     var policySupported = form.querySelector('[data-policy-supported]');
     var policyUnsupported = form.querySelector('[data-policy-unsupported]');
+    var policyRequired = form.querySelector('[data-policy-required]');
     var vendors = {};
     var commandPolicyVendors = {};
+    var policyRequiredLevels = {};
 
     try {
         vendors = JSON.parse(form.getAttribute('data-device-vendors') || '{}');
         commandPolicyVendors = JSON.parse(form.getAttribute('data-command-policy-vendors') || '{}');
+        policyRequiredLevels = JSON.parse(form.getAttribute('data-policy-required-levels') || '{}');
     }
     catch (e) {
         vendors = {};
         commandPolicyVendors = {};
+        policyRequiredLevels = {};
     }
 
     if (!device || !panels.length) return;
@@ -469,6 +483,7 @@ $accessLevelScript = <<<'JS'
         var vendor = vendors[String(device.value)] || '';
 
         var customActive = false;
+        var activeLevel = '';
 
         panels.forEach(function (panel) {
             var active = panel.getAttribute('data-access-level-vendor') === vendor;
@@ -477,6 +492,7 @@ $accessLevelScript = <<<'JS'
             panel.hidden = !active;
             if (select) {
                 select.toggleAttribute('disabled', !active);
+                if (active) activeLevel = String(select.value);
                 if (active && select.value === 'custom') customActive = true;
             }
         });
@@ -496,8 +512,11 @@ $accessLevelScript = <<<'JS'
             if (!policyAllowed) policy.value = '';
             policy.toggleAttribute('disabled', !policyAllowed);
         }
-        if (policySupported) policySupported.hidden = !policyAllowed;
+        var needsPolicy = (policyRequiredLevels[vendor] || []).indexOf(activeLevel) !== -1;
+
+        if (policySupported) policySupported.hidden = !policyAllowed || needsPolicy;
         if (policyUnsupported) policyUnsupported.hidden = policyAllowed;
+        if (policyRequired) policyRequired.hidden = !needsPolicy;
     }
 
     device.addEventListener('change', syncAccessLevel);

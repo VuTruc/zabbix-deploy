@@ -367,11 +367,20 @@ foreach ($users as $user) {
 
         $addresses[$address] = true;
 
-        $blocks = VendorProfiles::blocks(
-            (string) $assignment['device_vendor'],
-            (string) $assignment['access_level'],
-            (string) ($assignment['access_custom'] ?? '')
-        );
+        $vendor = (string) $assignment['device_vendor'];
+        $level = (string) $assignment['access_level'];
+        $custom = (string) ($assignment['access_custom'] ?? '');
+
+        // Fail closed: a policy-only level without a policy would grant every command.
+        if ((string) $assignment['access_mode'] !== 'policy'
+            && VendorProfiles::requiresPolicy($vendor, $level, $custom)) {
+            fail(
+                'User '.$user['username'].' has the '.VendorProfiles::levelLabel($vendor, $level, $custom).
+                ' access level on '.$assignment['device_name'].' without a Command Policy.'
+            );
+        }
+
+        $blocks = VendorProfiles::blocks($vendor, $level, $custom);
 
         foreach ($blocks as $block) {
             $service = (string) $block['service'];

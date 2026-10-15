@@ -528,6 +528,12 @@ class TacacsAssignments extends CController {
                         $accessCustom = '';
                     }
 
+                    if ($allowAll && VendorProfiles::requiresPolicy($deviceVendor, $accessLevel, $accessCustom)) {
+                        throw new \InvalidArgumentException(
+                            _('The Custom access level runs only the commands in a Command Policy. Choose a policy instead of Allow All.')
+                        );
+                    }
+
                     $stmt = $db->prepare(
                         'INSERT INTO assignments
                             (user_id, device_id, policy_id, access_mode, access_level, access_custom)

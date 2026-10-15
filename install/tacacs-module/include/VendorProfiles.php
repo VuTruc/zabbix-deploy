@@ -18,6 +18,8 @@ namespace Modules\Tacacs;
  *
  * command_authorization: the device sends each command to the server, so a
  * command Policy is enforced. Without it a Policy would have no effect.
+ * requires_policy: the level is only meaningful with a command Policy
+ * (Cisco Custom = priv-lvl 7 limited to the Policy's commands).
  * verified: false marks attribute sets taken from documentation only.
  *
  * Add a platform only with a documented attribute set.
@@ -59,6 +61,16 @@ class VendorProfiles {
             ]
         ];
 
+        // Only for platforms that authorize each command against the Policy.
+        $ciscoPolicyLevels = $ciscoLevels + [
+            'custom_policy' => [
+                'label' => 'Custom (level 7)',
+                'description' => 'priv-lvl 7: chỉ chạy các lệnh trong Command Policy (bắt buộc chọn policy). Lệnh mà thiết bị đặt ở level 15 (vd: configure terminal) vẫn bị chặn nếu trên thiết bị chưa gán xuống level 7.',
+                'requires_policy' => true,
+                'blocks' => [self::block('exec', 'priv-lvl', '7', false)]
+            ]
+        ];
+
         return [
             'generic' => [
                 'manufacturer' => 'generic',
@@ -77,7 +89,7 @@ class VendorProfiles {
                 'command_authorization' => true,
                 'verified' => true,
                 'default_level' => 'readonly',
-                'levels' => $ciscoLevels
+                'levels' => $ciscoPolicyLevels
             ],
             'cisco_smb' => [
                 'manufacturer' => 'cisco',
@@ -95,7 +107,7 @@ class VendorProfiles {
                 'command_authorization' => true,
                 'verified' => true,
                 'default_level' => 'readonly',
-                'levels' => $ciscoLevels
+                'levels' => $ciscoPolicyLevels
             ],
             'cisco_nxos' => [
                 'manufacturer' => 'cisco',
@@ -212,6 +224,13 @@ class VendorProfiles {
 
     public static function supportsCommandPolicy(string $vendor): bool {
         return self::get($vendor)['command_authorization'];
+    }
+
+    public static function requiresPolicy(string $vendor, string $level, string $custom = ''): bool {
+        $profile = self::get($vendor);
+        $resolved = self::resolveLevel($vendor, $level, $custom);
+
+        return !empty($profile['levels'][$resolved]['requires_policy']);
     }
 
     public static function supportsCustom(string $vendor): bool {

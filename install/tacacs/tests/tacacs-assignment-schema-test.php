@@ -77,6 +77,11 @@ $checks = [
     'devices no longer edit device_type; vendor/platform replaces it' =>
         !str_contains($content['devices_controller'], 'device_type')
         && !str_contains($content['installer'], 'include/DeviceTypes.php'),
+    'Cisco Custom level is priv-lvl 7 and requires a Command Policy' =>
+        str_contains($content['vendor_profiles'], "'requires_policy' => true")
+        && str_contains($content['vendor_profiles'], "self::block('exec', 'priv-lvl', '7', false)")
+        && str_contains($content['controller'], 'VendorProfiles::requiresPolicy(')
+        && str_contains($content['generator'], 'VendorProfiles::requiresPolicy('),
     'installer deploys vendor profiles and runs the vendor migration' =>
         str_contains($content['installer'], '"include/VendorProfiles.php"')
         && str_contains($content['installer'], 'migrate-vendor-levels.php')
