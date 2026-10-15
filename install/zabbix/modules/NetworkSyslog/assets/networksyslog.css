@@ -143,3 +143,17 @@ main :is(button, .btn, .btn-alt):not(.btn-icon):not(.btn-link):not(.btn-grey):no
     cursor: default;
 }
 /* END uniform module buttons v1 */
+
+/* BEGIN uniform list tables v1
+ * Every list table in the page content splits its width evenly between its
+ * columns. Long values wrap inside their cell instead of widening it. Kept
+ * identical in tacacs.css, oxidized.css and networksyslog.css. */
+main table.list-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+main table.list-table :is(th, td) {
+    overflow-wrap: anywhere;
+}
+/* END uniform list tables v1 */
