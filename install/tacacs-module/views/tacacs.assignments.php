@@ -377,7 +377,7 @@ $policyHelp = [
         ->addClass('tacacs-device-type-help')
         ->setAttribute('data-policy-unsupported', '1')
         ->setAttribute('hidden', 'hidden'),
-    (new CDiv(_('Custom Mode runs only the commands in the selected policy. Allow All is not accepted.')))
+    (new CDiv(_('Custom Mode runs only the commands in the selected policy.')))
         ->addClass('tacacs-device-type-help')
         ->setAttribute('data-policy-required', '1')
         ->setAttribute('hidden', 'hidden')
@@ -513,6 +513,21 @@ $accessLevelScript = <<<'JS'
             policy.toggleAttribute('disabled', !policyAllowed);
         }
         var needsPolicy = (policyRequiredLevels[vendor] || []).indexOf(activeLevel) !== -1;
+
+        // Custom Mode lists only policies: hide Allow All and move off it.
+        if (policy && typeof policy.getOptionByValue === 'function') {
+            var allowAll = policy.getOptionByValue('');
+
+            if (allowAll) allowAll.hidden = needsPolicy;
+
+            if (needsPolicy && policy.value === '') {
+                var firstPolicy = policy.getOptions().find(function (option) {
+                    return option.value !== '';
+                });
+
+                if (firstPolicy) policy.value = firstPolicy.value;
+            }
+        }
 
         if (policySupported) policySupported.hidden = !policyAllowed || needsPolicy;
         if (policyUnsupported) policyUnsupported.hidden = policyAllowed;
