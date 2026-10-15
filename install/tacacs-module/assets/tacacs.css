@@ -1900,3 +1900,23 @@ main .tacacs-apply-bar .tacacs-apply-manual-button,
     caret-color: #ffffff;
     transition: background-color 9999s ease-out 0s;
 }
+
+/* Password field spans exactly from the left edge of Unlock Assignments to
+ * the right edge of Reset Password: 2 x 160px buttons + 10px gap
+ * (2 x 140px + 8px on narrow screens). */
+.tacacs-assignment-lock-screen form[name="tacacs_assignment_page_unlock"] .form-field {
+    width: 330px !important;
+    max-width: 100%;
+}
+
+.tacacs-assignment-lock-screen form[name="tacacs_assignment_page_unlock"] #page_password {
+    width: 330px !important;
+    max-width: 100%;
+}
+
+@media (max-width: 600px) {
+    .tacacs-assignment-lock-screen form[name="tacacs_assignment_page_unlock"] .form-field,
+    .tacacs-assignment-lock-screen form[name="tacacs_assignment_page_unlock"] #page_password {
+        width: 288px !important;
+    }
+}
