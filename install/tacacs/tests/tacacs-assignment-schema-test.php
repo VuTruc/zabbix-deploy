@@ -84,6 +84,10 @@ $checks = [
         && str_contains($content['vendor_profiles'], "self::block('exec', 'priv-lvl', '7', false)")
         && str_contains($content['controller'], 'VendorProfiles::policyMode(')
         && str_contains($content['generator'], 'VendorProfiles::requiresPolicy('),
+    'assignments can be edited without changing user or device' =>
+        str_contains($content['controller'], "'edit_id' => 'int32'")
+        && str_contains($content['controller'], 'SELECT user_id, device_id FROM assignments WHERE id = :id')
+        && str_contains($content['controller'], 'access_custom = :access_custom'),
     'installer deploys vendor profiles and runs the vendor migration' =>
         str_contains($content['installer'], '"include/VendorProfiles.php"')
         && str_contains($content['installer'], 'migrate-vendor-levels.php')

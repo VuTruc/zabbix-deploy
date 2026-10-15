@@ -39,6 +39,7 @@ class TacacsAssignments extends CController {
             'access_mode' => 'in all,policy',
             'access_level' => 'string',
             'access_custom' => 'string',
+            'edit_id' => 'int32',
             'page_action' => 'in unlock_page,set_page_password,reset_page_password,change_page_password,logout_page',
             'page_password' => 'string',
             'current_page_password' => 'string',
@@ -442,8 +443,24 @@ class TacacsAssignments extends CController {
 
             if ($assign === 1) {
                 $error = null;
+                $editId = (int) $this->getInput('edit_id', 0);
                 $userId = (int) $this->getInput('user_id', 0);
                 $deviceId = (int) $this->getInput('device_id', 0);
+
+                // Editing keeps the stored user and device; only the access level,
+                // custom name and command policy change.
+                if ($editId > 0) {
+                    $stmt = $db->prepare('SELECT user_id, device_id FROM assignments WHERE id = :id');
+                    $stmt->execute([':id' => $editId]);
+                    $existing = $stmt->fetch();
+
+                    if (!$existing) {
+                        throw new \InvalidArgumentException(_('The assignment no longer exists.'));
+                    }
+
+                    $userId = (int) $existing['user_id'];
+                    $deviceId = (int) $existing['device_id'];
+                }
                 // No policy: the server adds no command rules and the device applies
                 // its own level permissions (stored as access_mode 'all').
                 $policyChoice = trim((string) $this->getInput('policy_id', ''));
@@ -544,29 +561,50 @@ class TacacsAssignments extends CController {
                         );
                     }
 
-                    $stmt = $db->prepare(
-                        'INSERT INTO assignments
-                            (user_id, device_id, policy_id, access_mode, access_level, access_custom)
-                         VALUES
-                            (:user_id, :device_id, :policy_id, :access_mode, :access_level, :access_custom)'
-                    );
-
-                    try {
+                    if ($editId > 0) {
+                        $stmt = $db->prepare(
+                            'UPDATE assignments
+                             SET policy_id = :policy_id,
+                                 access_mode = :access_mode,
+                                 access_level = :access_level,
+                                 access_custom = :access_custom
+                             WHERE id = :id'
+                        );
                         $stmt->execute([
-                            ':user_id' => $userId,
-                            ':device_id' => $deviceId,
                             ':policy_id' => $allowAll ? null : $policyId,
                             ':access_mode' => $allowAll ? 'all' : 'policy',
                             ':access_level' => $accessLevel,
-                            ':access_custom' => $accessCustom !== '' ? $accessCustom : null
+                            ':access_custom' => $accessCustom !== '' ? $accessCustom : null,
+                            ':id' => $editId
                         ]);
+                    }
+                    else {
+                        $stmt = $db->prepare(
+                            'INSERT INTO assignments
+                                (user_id, device_id, policy_id, access_mode, access_level, access_custom)
+                             VALUES
+                                (:user_id, :device_id, :policy_id, :access_mode, :access_level, :access_custom)'
+                        );
+                    }
+
+                    try {
+                        if ($editId < 1) {
+                            $stmt->execute([
+                                ':user_id' => $userId,
+                                ':device_id' => $deviceId,
+                                ':policy_id' => $allowAll ? null : $policyId,
+                                ':access_mode' => $allowAll ? 'all' : 'policy',
+                                ':access_level' => $accessLevel,
+                                ':access_custom' => $accessCustom !== '' ? $accessCustom : null
+                            ]);
+                        }
                     }
                     catch (\PDOException $e) {
                         $mysqlError = isset($e->errorInfo[1])
                             ? (int) $e->errorInfo[1] : 0;
 
                         if ($e->getCode() === '23000' && $mysqlError === 1062) {
-                            $error = _('This user already has an assignment for this device. Delete the existing assignment before changing its access level, access mode or policy.');
+                            $error = _('This user already has an assignment for this device. Use Edit to change its access level or policy.');
                         }
                         else {
                             throw $e;
@@ -583,10 +621,35 @@ class TacacsAssignments extends CController {
                 }
 
                 if ($error === null) {
-                    ApplyQueue::request('assignment added');
+                    ApplyQueue::request($editId > 0 ? 'assignment updated' : 'assignment added');
                     $this->redirect();
                     return;
                 }
+            }
+
+            $editAssignment = null;
+            $editRequestId = !$isPost ? (int) $this->getInput('edit_id', 0) : 0;
+
+            if ($editRequestId > 0) {
+                $stmt = $db->prepare(
+                    'SELECT
+                        a.id,
+                        a.user_id,
+                        a.device_id,
+                        a.policy_id,
+                        a.access_level,
+                        a.access_custom,
+                        u.username,
+                        d.name AS device_name,
+                        d.address AS device_address,
+                        d.vendor AS device_vendor
+                     FROM assignments a
+                     JOIN users u ON u.id = a.user_id
+                     JOIN devices d ON d.id = a.device_id
+                     WHERE a.id = :id'
+                );
+                $stmt->execute([':id' => $editRequestId]);
+                $editAssignment = $stmt->fetch() ?: null;
             }
 
             $users = $db->query(
@@ -634,6 +697,7 @@ class TacacsAssignments extends CController {
                 'devices' => $devices,
                 'policies' => $policies,
                 'assignments' => $assignments,
+                'edit_assignment' => $editAssignment,
                 'error' => $error ?? null,
                 'page_notice' => $thisNotice,
                 'page_recovery_code' => $pageRecoveryCode

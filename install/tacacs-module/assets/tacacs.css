@@ -110,7 +110,8 @@
 
 .tacacs-device-actions,
 .tacacs-user-actions,
-.tacacs-policy-actions {
+.tacacs-policy-actions,
+.tacacs-assignment-actions {
     display: flex;
     gap: 8px;
     align-items: center;
@@ -1775,3 +1776,9 @@ body.tacacs-modal-open {
 .tacacs-apply-pending { border-left-color: #1c7ed6; background: rgba(28,126,214,.10); }
 .tacacs-apply-stale, .tacacs-apply-unavailable { border-left-color: #f08c00; background: rgba(240,140,0,.12); }
 .tacacs-apply-failed { border-left-color: #e03131; background: rgba(224,49,49,.12); }
+
+/* Edit and Delete are separate forms; keep them on one row. */
+.tacacs-assignment-actions form {
+    display: inline-flex;
+    margin: 0;
+}

@@ -286,6 +286,9 @@ $form->setName('tacacs_assignments_form');
 $form->setAttribute('method', 'post');
 $form->setAction($base_url->getUrl());
 
+$editAssignment = $data['edit_assignment'] ?? null;
+$isEdit = $editAssignment !== null;
+
 $userOptions = [];
 foreach ($data['users'] as $user) {
     $userOptions[$user['id']] = $user['username'];
@@ -301,6 +304,22 @@ foreach ($data['devices'] as $device) {
         : VendorProfiles::DEFAULT_VENDOR;
 }
 
+// Edit keeps the user and device: offer only the assigned ones.
+if ($isEdit) {
+    $editVendor = VendorProfiles::exists((string) $editAssignment['device_vendor'])
+        ? (string) $editAssignment['device_vendor']
+        : VendorProfiles::DEFAULT_VENDOR;
+    $editCustom = (string) ($editAssignment['access_custom'] ?? '');
+    $editLevel = VendorProfiles::resolveLevel($editVendor, (string) $editAssignment['access_level'], $editCustom);
+
+    $userOptions = [$editAssignment['user_id'] => $editAssignment['username']];
+    $deviceOptions = [
+        $editAssignment['device_id'] =>
+            $editAssignment['device_name'].' ('.$editAssignment['device_address'].')'
+    ];
+    $deviceVendors = [$editAssignment['device_id'] => $editVendor];
+}
+
 /*
  * One Access Level select per vendor. JavaScript shows the one matching the
  * selected device and disables the others so only it is submitted.
@@ -314,7 +333,7 @@ $accessLevelSelects = [
 foreach (VendorProfiles::all() as $vendorKey => $vendor) {
     $levelSelect = (new CSelect('access_level'))
         ->setId('access_level_'.$vendorKey)
-        ->setValue($vendor['default_level'])
+        ->setValue($isEdit && $vendorKey === $editVendor ? $editLevel : $vendor['default_level'])
         ->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
         ->setDisabled();
 
@@ -346,7 +365,7 @@ foreach (VendorProfiles::all() as $vendorKey => $vendor) {
 
 // Shown only when the active platform's level is Custom.
 $accessLevelSelects[] = (new CDiv(
-    (new CTextBox('access_custom'))
+    (new CTextBox('access_custom', $isEdit ? $editCustom : ''))
         ->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
         ->setAttribute('maxlength', 64)
         ->setAttribute('placeholder', _('Profile, role or template name on the device'))
@@ -365,7 +384,7 @@ foreach ($data['policies'] as $policy) {
 // use one: required for Cisco Custom Mode, optional where no level defines
 // the permissions (Generic, NX-OS). Level 1/15 and similar levels hide it.
 $policySelect = (new CSelect('policy_id'))
-    ->setValue('')
+    ->setValue($isEdit && $editAssignment['policy_id'] !== null ? (string) $editAssignment['policy_id'] : '')
     ->setFocusableElementId('label-policy_id')
     ->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
     ->addOption(new CSelectOption('', _('No policy')))
@@ -400,7 +419,8 @@ $grid = (new CFormGrid())
         (new CLabel(_('User'), 'user_id'))->setAsteriskMark(),
         new CFormField(
             (new CSelect('user_id'))
-                ->setValue('')
+                ->setValue($isEdit ? (string) $editAssignment['user_id'] : '')
+                ->setReadonly($isEdit)
                 ->addOptions(
                     CSelect::createOptionsFromArray($userOptions)
                 )
@@ -410,7 +430,8 @@ $grid = (new CFormGrid())
         (new CLabel(_('Device'), 'device_id'))->setAsteriskMark(),
         new CFormField(
             (new CSelect('device_id'))
-                ->setValue('')
+                ->setValue($isEdit ? (string) $editAssignment['device_id'] : '')
+                ->setReadonly($isEdit)
                 ->addOptions(
                     CSelect::createOptionsFromArray($deviceOptions)
                 )
@@ -434,15 +455,29 @@ $form->setAttribute('data-device-vendors', json_encode($deviceVendors));
 $form->setAttribute('data-policy-modes', json_encode($policyModes));
 $form->addVar(CSRF_TOKEN_NAME, CCsrfTokenHelper::get('tacacs.assignments'));
 $form->addVar('assign', 1);
-$form->addItem(
-    new CFormActions(
-        new CSubmit('submit', _('Assign'))
-    )
-);
+
+if ($isEdit) {
+    $form->addVar('edit_id', (int) $editAssignment['id']);
+    $form->addItem(
+        new CFormActions(
+            new CSubmit('submit', _('Update')),
+            [
+                (new CRedirectButton(_('Cancel'), $base_url->getUrl()))
+            ]
+        )
+    );
+}
+else {
+    $form->addItem(
+        new CFormActions(
+            new CSubmit('submit', _('Assign'))
+        )
+    );
+}
 
 $html_page->addItem(
     (new CDiv([
-        (new CTag('h2', true, _('Add Assignment')))
+        (new CTag('h2', true, $isEdit ? _('Edit Assignment') : _('Add Assignment')))
             ->addClass('tacacs-section-title'),
         $form
     ]))->addClass('tacacs-assignment-section')
@@ -585,6 +620,14 @@ foreach ($data['assignments'] as $assignment) {
         new CSubmit('submit', _('Delete'))
     );
 
+    $editForm = new CForm('get');
+    $editForm->setName('tacacs_assignment_edit_'.$assignment['id']);
+    $editForm->setAction('zabbix.php');
+    // GET forms drop the query string of the action URL; send action as a field.
+    $editForm->addVar('action', 'tacacs.assignments');
+    $editForm->addVar('edit_id', (int) $assignment['id']);
+    $editForm->addItem(new CSubmit('submit', _('Edit')));
+
     $table->addRow([
         $assignment['username'],
         $assignment['device_name'].' ('.$assignment['device_address'].')',
@@ -599,7 +642,7 @@ foreach ($data['assignments'] as $assignment) {
                 ? $assignment['policy_name']
                 : $assignment['policy_name'].' '._('(not enforced by this device)')),
         $assignment['created_at'],
-        (new CDiv($deleteForm))
+        (new CDiv([$editForm, $deleteForm]))
             ->addClass('tacacs-assignment-actions')
     ]);
 }
