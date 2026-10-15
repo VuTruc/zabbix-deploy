@@ -1978,21 +1978,9 @@ main .tacacs-apply-bar .tacacs-apply-manual-button {
     }
 }
 
-/* Created / Last modified stay on one line (columns are equal width). */
+/* Created / Last modified: one line and the same width in every list, so
+ * the other columns share the remaining space evenly. */
 .list-table .tacacs-col-time {
+    width: 150px;
     white-space: nowrap;
 }
-
-/* BEGIN uniform list tables v1
- * Every list table in the page content splits its width evenly between its
- * columns. Long values wrap inside their cell instead of widening it. Kept
- * identical in tacacs.css, oxidized.css and networksyslog.css. */
-main table.list-table {
-    table-layout: fixed;
-    width: 100%;
-}
-
-main table.list-table :is(th, td) {
-    overflow-wrap: anywhere;
-}
-/* END uniform list tables v1 */
