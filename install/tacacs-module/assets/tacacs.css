@@ -1841,7 +1841,8 @@ main .tacacs-apply-bar .tacacs-apply-manual-button,
 }
 
 /* Logout lives in the page header (outside <main>), so the uniform button
- * rule does not reach it; give it the same size and look as Apply Manual. */
+ * rule does not reach it. Same size as Apply Manual, secondary (outline)
+ * look so it stands apart from the primary actions. */
 .header-controls .tacacs-assignment-logout-button {
     display: inline-flex;
     align-items: center;
@@ -1856,10 +1857,11 @@ main .tacacs-apply-bar .tacacs-apply-manual-button,
     font-weight: normal;
     line-height: 24px;
     white-space: nowrap;
-    color: #ffffff;
-    background-color: #0275b8;
+    color: #0275b8;
+    background-color: transparent;
     border: 1px solid #0275b8;
     border-radius: 2px;
+    cursor: pointer;
 }
 
 .header-controls .tacacs-assignment-logout-button:is(:hover, :focus) {
