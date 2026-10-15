@@ -1808,11 +1808,13 @@ main :is(button, .btn, .btn-alt):not(.btn-icon):not(.btn-link):not(.btn-grey):no
 /* END uniform module buttons v1 */
 
 /* Apply notice on the left, Apply Manual on the right of the same row. */
+/* Bottom margin equals main's 10px top padding, so the row sits centered
+ * between the header line and the first content section. */
 .tacacs-apply-bar {
     display: flex;
     align-items: stretch;
     gap: 8px;
-    margin: 0 0 8px;
+    margin: 0 0 10px;
 }
 
 .tacacs-apply-bar-notice {
