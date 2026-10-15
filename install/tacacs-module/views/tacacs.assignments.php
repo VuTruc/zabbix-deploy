@@ -231,16 +231,24 @@ if (!empty($data['page_locked'])) {
     return;
 }
 
+// Short page notices (e.g. "Assignment page unlocked.") share the apply notice
+// slot next to Apply Manual and hide after 5 seconds. The recovery code below
+// stays in its own box and never hides: it is shown only once.
+$pageNotice = null;
+
 if (!empty($data['page_notice'])) {
-    $html_page->addItem(
+    $pageNotice = (new CDiv([
         (new CDiv($data['page_notice']))
-            ->addClass('msg-good')
-            ->setAttribute(
-                'style',
-                'display:block;box-sizing:border-box;width:100%;padding:8px 12px;margin:8px 0 12px;' .
-                'background:#e8f5e9;color:#1b5e20;border:1px solid #81c784;border-left-width:4px;border-radius:4px;'
-            )
-    );
+            ->addClass('tacacs-apply-status')
+            ->addClass('tacacs-apply-ok')
+            ->setId('tacacs-page-notice'),
+        new CScriptTag(
+            'setTimeout(function () {'.
+                ' var n = document.getElementById("tacacs-page-notice");'.
+                ' if (n) n.remove();'.
+            ' }, 5000);'
+        )
+    ]));
 }
 
 if (!empty($data['page_recovery_code'])) {
@@ -280,7 +288,7 @@ $applyNotice = \Modules\Tacacs\ApplyQueue::notice();
 
 $html_page->addItem(
     (new CDiv([
-        (new CDiv($applyNotice))->addClass('tacacs-apply-bar-notice'),
+        (new CDiv([$pageNotice, $applyNotice]))->addClass('tacacs-apply-bar-notice'),
         $applyForm
     ]))->addClass('tacacs-apply-bar')
 );

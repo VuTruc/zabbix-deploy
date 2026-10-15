@@ -1831,45 +1831,72 @@ main :is(button, .btn, .btn-alt):not(.btn-icon):not(.btn-link):not(.btn-grey):no
 /* Apply Manual matches the notice height; Logout matches Apply Manual. */
 main .tacacs-apply-bar .tacacs-apply-manual-button,
 .header-controls .tacacs-assignment-logout-button {
-    height: 36px !important;
-    line-height: 34px !important;
-}
-
-.tacacs-apply-bar form {
-    display: flex;
-    margin: 0;
-}
-
-/* Logout lives in the page header (outside <main>), so the uniform button
- * rule does not reach it. Same size as Apply Manual, secondary (outline)
- * look so it stands apart from the primary actions. */
-.header-controls .tacacs-assignment-logout-button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
     min-width: 80px;
-    height: 26px;
+    height: 36px;
     margin: 0;
-    padding: 0 12px;
-    font-family: Arial, Tahoma, Verdana, sans-serif;
-    font-size: 12px;
-    font-weight: normal;
-    line-height: 24px;
+    padding: 0 14px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.25;
     white-space: nowrap;
-    color: #0275b8;
-    background-color: transparent;
-    border: 1px solid #0275b8;
-    border-radius: 2px;
+    color: #ffffff;
+    /* Same glass look as Unlock Assignments; the dark tint stands in for the
+     * lock screen overlay so the white text stays readable on the header. */
+    background: rgba(15, 23, 42, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.68);
+    border-radius: 7px;
     cursor: pointer;
 }
 
 .header-controls .tacacs-assignment-logout-button:is(:hover, :focus) {
     color: #ffffff;
-    background-color: #02659f;
-    border-color: #02659f;
+    background: rgba(15, 23, 42, 0.68);
+    border-color: rgba(255, 255, 255, 0.9);
+}
+
+.header-controls .tacacs-assignment-logout-button:focus-visible {
+    outline: 2px solid rgba(15, 23, 42, 0.68);
+    outline-offset: 2px;
 }
 
 .header-controls form {
     margin: 0;
+}
+
+/* Lock screen inputs (unlock, set and reset password): same glass look and
+ * 7px rounding as the Unlock Assignments button. */
+.tacacs-assignment-lock-screen input:is([type="password"], [type="text"]) {
+    box-sizing: border-box;
+    height: 38px !important;
+    padding: 0 12px !important;
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.13) !important;
+    border: 1px solid rgba(255, 255, 255, 0.68) !important;
+    border-radius: 7px !important;
+    box-shadow: none !important;
+}
+
+.tacacs-assignment-lock-screen input:is([type="password"], [type="text"]):is(:hover, :focus) {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.tacacs-assignment-lock-screen input:is([type="password"], [type="text"]):focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}
+
+.tacacs-assignment-lock-screen input::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* Keep the glass look when the browser autofills the password. */
+.tacacs-assignment-lock-screen input:-webkit-autofill {
+    -webkit-text-fill-color: #ffffff;
+    caret-color: #ffffff;
+    transition: background-color 9999s ease-out 0s;
 }

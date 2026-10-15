@@ -166,7 +166,7 @@ class ApplyQueue {
             self::statusBox(),
             new \CScriptTag(
                 'setTimeout(function () {'.
-                    ' var n = document.querySelector(".tacacs-apply-bar-notice .tacacs-apply-status");'.
+                    ' var n = document.getElementById("tacacs-apply-notice");'.
                     ' if (n) n.remove();'.
                 ' }, 5000);'
             )
@@ -187,6 +187,7 @@ class ApplyQueue {
             new \CSpan($text)
         ]))
             ->addClass('tacacs-apply-status')
-            ->addClass('tacacs-apply-'.$state['state']);
+            ->addClass('tacacs-apply-'.$state['state'])
+            ->setId('tacacs-apply-notice');
     }
 }
