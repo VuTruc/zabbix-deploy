@@ -136,10 +136,18 @@ $html_page->addItem(
         '(function () {'.
             ' var view = document.querySelector(".oxidized-config-view");'.
             ' if (!view) return;'.
+            ' var sections = document.querySelectorAll(".oxidized-nodes-table-section");'.
+            ' var last = sections[sections.length - 1];'.
             ' function fit() {'.
-                ' var page = document.documentElement;'.
-                ' var free = window.innerHeight - (page.scrollHeight - view.offsetHeight) - 4;'.
-                ' view.style.height = Math.max(160, free) + "px";'.
+                // Page coordinates: top of the viewer, content below it
+                // (rest of its section, Versions, margins), then the window.
+                ' var y = window.scrollY;'.
+                ' var top = view.getBoundingClientRect().top + y;'.
+                ' var viewBottom = top + view.offsetHeight;'.
+                ' var lastBottom = last.getBoundingClientRect().bottom + y;'.
+                ' var below = lastBottom - viewBottom + parseFloat(getComputedStyle(last).marginBottom || 0);'.
+                ' var free = window.innerHeight - top - below - 16;'.
+                ' view.style.height = Math.max(160, Math.floor(free)) + "px";'.
             ' }'.
             ' fit();'.
             ' window.addEventListener("resize", fit);'.
