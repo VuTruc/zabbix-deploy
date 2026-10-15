@@ -101,9 +101,13 @@ main :is(button, .btn, .btn-alt):not(.btn-icon):not(.btn-link):not(.btn-grey):no
     margin-bottom: 10px;
 }
 
+/* 300px like the approved mockup so Versions stays in view; drag the
+ * bottom edge to read more lines. */
 .oxidized-config-view {
     box-sizing: border-box;
-    max-height: 600px;
+    height: 300px;
+    min-height: 120px;
+    resize: vertical;
     margin: 0;
     padding: 12px;
     overflow: auto;
