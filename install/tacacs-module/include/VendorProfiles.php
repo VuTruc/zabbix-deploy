@@ -50,12 +50,12 @@ class VendorProfiles {
 
         $ciscoLevels = [
             'readonly' => [
-                'label' => 'Read-only (level 1)',
+                'label' => 'User EXEC Mode (Level 1)',
                 'description' => 'priv-lvl 1: chỉ xem, không vào được enable.',
                 'blocks' => [self::block('exec', 'priv-lvl', '1', false)]
             ],
             'admin' => [
-                'label' => 'Admin (level 15)',
+                'label' => 'Privileged EXEC Mode (Level 15)',
                 'description' => 'priv-lvl 15: toàn quyền, vào thẳng chế độ enable.',
                 'blocks' => [self::block('exec', 'priv-lvl', '15', false)]
             ]
@@ -64,7 +64,7 @@ class VendorProfiles {
         // Only for platforms that authorize each command against the Policy.
         $ciscoPolicyLevels = $ciscoLevels + [
             'custom_policy' => [
-                'label' => 'Custom (level 7)',
+                'label' => 'Custom Mode',
                 'description' => 'priv-lvl 7: chỉ chạy các lệnh trong Command Policy (bắt buộc chọn policy). Lệnh mà thiết bị đặt ở level 15 (vd: configure terminal) vẫn bị chặn nếu trên thiết bị chưa gán xuống level 7.',
                 'requires_policy' => true,
                 'blocks' => [self::block('exec', 'priv-lvl', '7', false)]

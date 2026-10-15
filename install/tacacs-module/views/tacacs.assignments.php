@@ -377,7 +377,7 @@ $policyHelp = [
         ->addClass('tacacs-device-type-help')
         ->setAttribute('data-policy-unsupported', '1')
         ->setAttribute('hidden', 'hidden'),
-    (new CDiv(_('The Custom access level runs only the commands in the selected policy. Allow All is not accepted.')))
+    (new CDiv(_('Custom Mode runs only the commands in the selected policy. Allow All is not accepted.')))
         ->addClass('tacacs-device-type-help')
         ->setAttribute('data-policy-required', '1')
         ->setAttribute('hidden', 'hidden')

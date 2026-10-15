@@ -530,7 +530,7 @@ class TacacsAssignments extends CController {
 
                     if ($allowAll && VendorProfiles::requiresPolicy($deviceVendor, $accessLevel, $accessCustom)) {
                         throw new \InvalidArgumentException(
-                            _('The Custom access level runs only the commands in a Command Policy. Choose a policy instead of Allow All.')
+                            _('Custom Mode runs only the commands in a Command Policy. Choose a policy instead of Allow All.')
                         );
                     }
 
