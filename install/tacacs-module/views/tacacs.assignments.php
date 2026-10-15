@@ -467,6 +467,55 @@ $html_page->addItem(
 );
 
 /*
+ * Access Level follows the selected device's vendor. Inline on purpose: view
+ * addJsFile() paths go through jsLoader.php, which ignores module files.
+ */
+$accessLevelScript = <<<'JS'
+(function () {
+    var form = document.forms.namedItem('tacacs_assignments_form');
+    if (!form) return;
+
+    var device = form.querySelector('z-select[name="device_id"]');
+    var placeholder = form.querySelector('[data-access-level-placeholder]');
+    var panels = form.querySelectorAll('[data-access-level-vendor]');
+    var vendors = {};
+
+    try {
+        vendors = JSON.parse(form.getAttribute('data-device-vendors') || '{}');
+    }
+    catch (e) {
+        vendors = {};
+    }
+
+    if (!device || !panels.length) return;
+
+    // Disabled selects are not submitted, so exactly one access_level is posted.
+    function syncAccessLevel() {
+        var vendor = vendors[String(device.value)] || '';
+
+        panels.forEach(function (panel) {
+            var active = panel.getAttribute('data-access-level-vendor') === vendor;
+            var select = panel.querySelector('z-select');
+
+            panel.hidden = !active;
+            if (select) select.toggleAttribute('disabled', !active);
+        });
+
+        if (placeholder) placeholder.hidden = vendor !== '';
+    }
+
+    device.addEventListener('change', syncAccessLevel);
+
+    // The preselected device fires no change event; sync once z-select has a value.
+    customElements.whenDefined('z-select').then(function () {
+        setTimeout(syncAccessLevel, 0);
+    });
+})();
+JS;
+
+$html_page->addItem((new CScriptTag($accessLevelScript))->setOnDocumentReady());
+
+/*
  * Current assignments.
  */
 $table = new CTableInfo();
