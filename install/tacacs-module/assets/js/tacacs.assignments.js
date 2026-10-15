@@ -423,14 +423,26 @@
                 var select = panel.querySelector('z-select');
 
                 panel.hidden = !active;
-                if (select) select.disabled = !active;
+                // Use the attribute: z-select reacts to it, and it also works
+                // before the custom element is upgraded.
+                if (select) select.toggleAttribute('disabled', !active);
             });
 
             if (placeholder) placeholder.hidden = vendor !== '';
         }
 
         device.addEventListener('change', syncAccessLevel);
-        syncAccessLevel();
+
+        // z-select only has a value once the custom element is defined; the
+        // preselected device fires no change event, so sync after that.
+        if (window.customElements && window.customElements.whenDefined) {
+            window.customElements.whenDefined('z-select').then(function () {
+                window.setTimeout(syncAccessLevel, 0);
+            });
+        }
+        else {
+            syncAccessLevel();
+        }
     }
 
     if (document.readyState === 'loading') {
