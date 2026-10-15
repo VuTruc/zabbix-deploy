@@ -127,9 +127,9 @@ $html_page->addItem(
 );
 
 /*
- * Size the config viewer to the free viewport height so the whole page fits
- * without scrolling (160px minimum). Inline on purpose: view addJsFile()
- * paths are not loaded for modules.
+ * Size the config viewer so it and at least the first (latest) version row
+ * fit in the window; older versions may scroll (160px minimum). Inline on
+ * purpose: view addJsFile() paths are not loaded for modules.
  */
 $html_page->addItem(
     (new CScriptTag(
@@ -137,16 +137,16 @@ $html_page->addItem(
             ' var view = document.querySelector(".oxidized-config-view");'.
             ' if (!view) return;'.
             ' var sections = document.querySelectorAll(".oxidized-nodes-table-section");'.
-            ' var last = sections[sections.length - 1];'.
+            ' var versions = sections[sections.length - 1];'.
             ' function fit() {'.
-                // Page coordinates: top of the viewer, content below it
-                // (rest of its section, Versions, margins), then the window.
+                // Keep in view: the viewer, the Versions title and header row,
+                // and the first version row (or the "no versions" row).
+                ' var anchor = versions.querySelector("tbody tr") || versions;'.
                 ' var y = window.scrollY;'.
                 ' var top = view.getBoundingClientRect().top + y;'.
                 ' var viewBottom = top + view.offsetHeight;'.
-                ' var lastBottom = last.getBoundingClientRect().bottom + y;'.
-                ' var below = lastBottom - viewBottom + parseFloat(getComputedStyle(last).marginBottom || 0);'.
-                ' var free = window.innerHeight - top - below - 16;'.
+                ' var anchorBottom = anchor.getBoundingClientRect().bottom + y;'.
+                ' var free = window.innerHeight - top - (anchorBottom - viewBottom) - 16;'.
                 ' view.style.height = Math.max(160, Math.floor(free)) + "px";'.
             ' }'.
             ' fit();'.
