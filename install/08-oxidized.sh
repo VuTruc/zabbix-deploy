@@ -459,8 +459,10 @@ models:
     vars:
       auth_methods: [password, keyboard-interactive]
   # Fortinet re-encrypts secrets on every export; hide them so
-  # unchanged configs do not create new versions.
+  # unchanged configs do not create new versions. "show" on a full
+  # FortiGate config takes longer than the global timeout.
   fortigate:
+    timeout: 300
     vars:
       remove_secret: true
   fortios:
@@ -731,8 +733,10 @@ model_auth = {
     ),
     "fortigate": (
         "  # Fortinet re-encrypts secrets on every export; hide them so\n"
-        "  # unchanged configs do not create new versions.\n"
+        "  # unchanged configs do not create new versions. \"show\" on a full\n"
+        "  # FortiGate config takes longer than the global timeout.\n"
         "  fortigate:\n"
+        "    timeout: 300\n"
         "    vars:\n"
         "      remove_secret: true\n"
     ),
@@ -752,6 +756,21 @@ for model, block in model_auth.items():
             count=1,
             flags=re.MULTILINE
         )
+
+# Older configs have a fortigate block without a timeout.
+fortigate_block = re.search(
+    r'^  fortigate:\s*\n((?:    .*\n|\s*\n)*)', text, re.MULTILINE
+)
+if fortigate_block and not re.search(
+    r'^    timeout:', fortigate_block.group(1), re.MULTILINE
+):
+    text = re.sub(
+        r'^  fortigate:\s*\n',
+        '  fortigate:\n    timeout: 300\n',
+        text,
+        count=1,
+        flags=re.MULTILINE
+    )
 
 path.write_text(text, encoding="utf-8")
 PY
