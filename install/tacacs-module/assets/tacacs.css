@@ -1812,7 +1812,7 @@ main :is(button, .btn, .btn-alt):not(.btn-icon):not(.btn-link):not(.btn-grey):no
  * between the header line and the first content section. */
 .tacacs-apply-bar {
     display: flex;
-    align-items: stretch;
+    align-items: flex-start;
     gap: 8px;
     margin: 0 0 10px;
 }
@@ -1830,17 +1830,15 @@ main :is(button, .btn, .btn-alt):not(.btn-icon):not(.btn-link):not(.btn-grey):no
     margin: 0;
 }
 
-/* Apply Manual stretches to the notice height (36px minimum without one). */
+/* Apply Manual has the fixed height of a one-line notice (its 36px
+ * min-height); a longer, wrapped notice does not stretch the button. */
 .tacacs-apply-bar form {
     display: flex;
-    align-items: stretch;
     margin: 0;
 }
 
 main .tacacs-apply-bar .tacacs-apply-manual-button {
-    align-self: stretch;
-    height: auto !important;
-    min-height: 36px;
+    height: 36px !important;
     line-height: 1.25 !important;
 }
 
