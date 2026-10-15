@@ -234,6 +234,7 @@ $node_form
     ->addItem($node_form_list)
     ->addItem(
         (new CList())
+            ->addClass('oxidized-form-actions')
             ->addItem(
                 new CSubmitButton(
                     $data['edit'] !== null

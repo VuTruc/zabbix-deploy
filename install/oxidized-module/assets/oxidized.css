@@ -41,3 +41,53 @@
 .oxidized-reload {
     margin-top: 16px;
 }
+
+/* Update/Add and Clear: same 8px gap as the row actions. */
+.oxidized-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    list-style: none;
+    padding: 0;
+}
+
+/* BEGIN uniform module buttons v1
+ * Every action button in the page content (submit, Cancel, Edit/Delete links
+ * styled as .btn) shares one size and look. Icon/link buttons, the z-select
+ * internals, Zabbix "Select" (btn-grey) and the Assignments lock screen keep
+ * their own styles. Kept identical in tacacs.css, oxidized.css and
+ * networksyslog.css. */
+main :is(button, .btn, .btn-alt):not(.btn-icon):not(.btn-link):not(.btn-grey):not(.btn-overlay-close):not(z-select *):not(.tacacs-assignment-lock-screen *) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-width: 80px;
+    height: 26px;
+    margin: 0;
+    padding: 0 12px;
+    font-family: Arial, Tahoma, Verdana, sans-serif;
+    font-size: 12px;
+    font-weight: normal;
+    line-height: 24px;
+    white-space: nowrap;
+    text-decoration: none;
+    color: #ffffff;
+    background-color: #0275b8;
+    border: 1px solid #0275b8;
+    border-radius: 2px;
+}
+
+main :is(button, .btn, .btn-alt):not(.btn-icon):not(.btn-link):not(.btn-grey):not(.btn-overlay-close):not(z-select *):not(.tacacs-assignment-lock-screen *):is(:hover, :focus) {
+    color: #ffffff;
+    background-color: #02659f;
+    border-color: #02659f;
+    text-decoration: none;
+}
+
+main :is(button, .btn, .btn-alt):not(.btn-icon):not(.btn-link):not(.btn-grey):not(.btn-overlay-close):not(z-select *):not(.tacacs-assignment-lock-screen *)[disabled] {
+    opacity: 0.5;
+    cursor: default;
+}
+/* END uniform module buttons v1 */
