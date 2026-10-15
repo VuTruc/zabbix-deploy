@@ -269,8 +269,8 @@ if (!$is_edit) {
                 _('Vendor / Platform'),
                 _('Status'),
                 _('Description'),
-                _('Created'),
-                _('Last modified'),
+                (new CColHeader(_('Created')))->addClass('tacacs-col-time'),
+                (new CColHeader(_('Last modified')))->addClass('tacacs-col-time'),
                 _('Actions')
         ]);
 
@@ -350,8 +350,8 @@ if (!$is_edit) {
                         $device['description'] !== null
                                 ? $device['description']
                                 : '',
-                        \Modules\Tacacs\DateFormat::dateTime($device['created_at']),
-                        \Modules\Tacacs\DateFormat::dateTime($device['updated_at']),
+                        (new CCol(\Modules\Tacacs\DateFormat::dateTime($device['created_at'])))->addClass('tacacs-col-time'),
+                        (new CCol(\Modules\Tacacs\DateFormat::dateTime($device['updated_at'])))->addClass('tacacs-col-time'),
                         (new CDiv($actions))
                                 ->addClass('tacacs-device-actions')
                 ]);

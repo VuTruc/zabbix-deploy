@@ -629,8 +629,8 @@ $table->setHeader([
     _('Device'),
     _('Access Level'),
     _('Command Policy'),
-    _('Created'),
-    _('Last modified'),
+    (new CColHeader(_('Created')))->addClass('tacacs-col-time'),
+    (new CColHeader(_('Last modified')))->addClass('tacacs-col-time'),
     _('Actions')
 ]);
 
@@ -671,8 +671,8 @@ foreach ($data['assignments'] as $assignment) {
             : (VendorProfiles::supportsCommandPolicy((string) $assignment['device_vendor'])
                 ? $assignment['policy_name']
                 : $assignment['policy_name'].' '._('(not enforced by this device)')),
-        \Modules\Tacacs\DateFormat::dateTime($assignment['created_at']),
-        \Modules\Tacacs\DateFormat::dateTime($assignment['updated_at']),
+        (new CCol(\Modules\Tacacs\DateFormat::dateTime($assignment['created_at'])))->addClass('tacacs-col-time'),
+        (new CCol(\Modules\Tacacs\DateFormat::dateTime($assignment['updated_at'])))->addClass('tacacs-col-time'),
         (new CDiv([$editForm, $deleteForm]))
             ->addClass('tacacs-assignment-actions')
     ]);

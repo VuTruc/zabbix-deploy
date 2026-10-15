@@ -123,8 +123,8 @@ if (!$is_edit) {
 		_('Username'),
 		_('Description'),
 		_('Status'),
-		_('Created'),
-		_('Last modified'),
+		(new CColHeader(_('Created')))->addClass('tacacs-col-time'),
+		(new CColHeader(_('Last modified')))->addClass('tacacs-col-time'),
 		_('Actions')
 	]);
 
@@ -163,8 +163,8 @@ if (!$is_edit) {
 			$user['username'],
 			$user['description'] !== null ? $user['description'] : '',
 			(int) $user['enabled'] === 1 ? _('Enabled') : _('Disabled'),
-			\Modules\Tacacs\DateFormat::dateTime($user['created_at']),
-			\Modules\Tacacs\DateFormat::dateTime($user['updated_at']),
+			(new CCol(\Modules\Tacacs\DateFormat::dateTime($user['created_at'])))->addClass('tacacs-col-time'),
+			(new CCol(\Modules\Tacacs\DateFormat::dateTime($user['updated_at'])))->addClass('tacacs-col-time'),
 			(new CDiv($actions))
 
 			        ->addClass('tacacs-user-actions')

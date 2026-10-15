@@ -129,8 +129,8 @@ $policy_table->setHeader([
 	_('Name'),
 	_('Description'),
 	_('Status'),
-	_('Created'),
-	_('Last modified'),
+	(new CColHeader(_('Created')))->addClass('tacacs-col-time'),
+	(new CColHeader(_('Last modified')))->addClass('tacacs-col-time'),
 	_('Actions')
 ]);
 
@@ -153,8 +153,8 @@ foreach ($data['policies'] as $policy) {
 		$policy['name'],
 		$policy['description'] !== null ? $policy['description'] : '',
 		(int) $policy['enabled'] === 1 ? _('Enabled') : _('Disabled'),
-		\Modules\Tacacs\DateFormat::dateTime($policy['created_at']),
-		\Modules\Tacacs\DateFormat::dateTime($policy['updated_at']),
+		(new CCol(\Modules\Tacacs\DateFormat::dateTime($policy['created_at'])))->addClass('tacacs-col-time'),
+		(new CCol(\Modules\Tacacs\DateFormat::dateTime($policy['updated_at'])))->addClass('tacacs-col-time'),
                 (new CDiv([
                         (new CLink(_('Edit'), $edit_url->getUrl()))
                                 ->addClass('btn'),
@@ -356,8 +356,8 @@ $rule_table->setHeader([
 	_('Action'),
 	_('Order'),
 	_('Status'),
-	_('Created'),
-	_('Last modified'),
+	(new CColHeader(_('Created')))->addClass('tacacs-col-time'),
+	(new CColHeader(_('Last modified')))->addClass('tacacs-col-time'),
 	_('Actions')
 ]);
 
@@ -383,8 +383,8 @@ foreach ($data['rules'] as $rule) {
 		strtoupper($rule['action']),
 		$rule['rule_order'],
 		(int) $rule['enabled'] === 1 ? _('Enabled') : _('Disabled'),
-		\Modules\Tacacs\DateFormat::dateTime($rule['created_at']),
-		\Modules\Tacacs\DateFormat::dateTime($rule['updated_at']),
+		(new CCol(\Modules\Tacacs\DateFormat::dateTime($rule['created_at'])))->addClass('tacacs-col-time'),
+		(new CCol(\Modules\Tacacs\DateFormat::dateTime($rule['updated_at'])))->addClass('tacacs-col-time'),
                 (new CDiv([
                         (new CLink(_('Edit'), $edit_url->getUrl()))
                                 ->addClass('btn'),

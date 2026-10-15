@@ -1977,3 +1977,10 @@ main .tacacs-apply-bar .tacacs-apply-manual-button {
         min-width: 140px;
     }
 }
+
+/* Created / Last modified: one line and the same width in every list, so
+ * the other columns share the remaining space evenly. */
+.list-table .tacacs-col-time {
+    width: 150px;
+    white-space: nowrap;
+}
