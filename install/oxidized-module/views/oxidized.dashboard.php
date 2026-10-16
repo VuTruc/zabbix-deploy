@@ -51,9 +51,9 @@ $failed_anchor = '#oxidized-failed-nodes';
 
 $cards = [
     ['all', _('Nodes'), $data['stats']['nodes'], $nodes_url],
-    ['ok', _('Backup OK'), $data['stats']['ok'], $nodes_url],
-    ['failed', _('Failed'), $data['stats']['failed'], $failed_anchor],
-    ['never', _('Never'), $data['stats']['never'], $nodes_url],
+    ['ok', _('Backup Success'), $data['stats']['ok'], $nodes_url],
+    ['failed', _('Backup Fail'), $data['stats']['failed'], $failed_anchor],
+    ['never', _('Never Backup'), $data['stats']['never'], $nodes_url],
     ['due', _('Due in 24h'), $data['stats']['due'], $nodes_url]
 ];
 

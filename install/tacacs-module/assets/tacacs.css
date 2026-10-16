@@ -311,6 +311,11 @@
     padding: 8px 12px;
     border-left: 3px solid #6f8195;
     background: rgba(127, 127, 127, 0.08);
+    /* Center the two lines vertically in the box; stay left-aligned
+     * horizontally. */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 .tacacs-audit-command {
     white-space: normal;
