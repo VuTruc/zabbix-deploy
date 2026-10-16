@@ -2007,8 +2007,9 @@ main .tacacs-apply-bar .tacacs-apply-manual-button {
 /* Add/Update/Assign and Clear sit centered under the form fields. */
 form > .form-actions.tacacs-form-buttons {
     justify-content: center;
-    /* One blank line between the fields and the buttons. */
-    margin-top: 24px;
+    /* Same row-gap as .form-grid (blue-theme.css), so the button row
+     * sits exactly like one more field row. */
+    margin-top: 10px;
 }
 
 /* The inputs sit in a 340px middle column, centered on the same axis as the
