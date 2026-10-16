@@ -530,15 +530,16 @@ foreach ($devices as $device) {
     /*
      * Buttons
      */
-    $syslog_link = new CLink(
+    // Same button look as the other module buttons.
+    $syslog_link = (new CLink(
         _('View'),
         $syslog_url
-    );
+    ))->addClass('btn');
 
-    $events_link = new CLink(
+    $events_link = (new CLink(
         _('View'),
         $events_url
-    );
+    ))->addClass('btn');
 
     /*
      * Add row
