@@ -2003,11 +2003,20 @@ form > .form-actions.tacacs-form-buttons {
     justify-content: center;
 }
 
-/* Center the fields block too, so it lines up with the centered buttons.
- * Inputs are 453px wide; longer help text wraps within 480px. */
+/* The inputs (453px, the widest) sit in the middle column, centered on the
+ * same axis as the buttons; labels hug them from the left column. Help text
+ * wraps within the input width. */
 form:has(> .form-actions.tacacs-form-buttons) > .form-grid {
-    grid-template-columns: max-content minmax(0, 480px);
-    justify-content: center;
+    grid-template-columns: minmax(0, 1fr) 453px minmax(0, 1fr);
+}
+
+form:has(> .form-actions.tacacs-form-buttons) > .form-grid > label {
+    grid-column: 1;
+}
+
+form:has(> .form-actions.tacacs-form-buttons) > .form-grid > :is(.form-field, .field-fluid) {
+    grid-column: 2;
+    min-width: 0;
 }
 
 /* BEGIN centered button columns v1

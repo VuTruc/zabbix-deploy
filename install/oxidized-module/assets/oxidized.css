@@ -338,8 +338,27 @@ main table.list-table:has(tbody td:last-child :is(.btn, button)) td:last-child >
 }
 /* END centered button columns v1 */
 
-/* Add node: center the fields block like the Add / Clear buttons. */
+/* Add node: inputs (453px) centered on the buttons' axis, labels to their
+ * left; same layout as the TACACS+ forms. */
 .oxidized-node-form-section .table-forms {
-    width: auto;
-    margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 453px minmax(0, 1fr);
+    column-gap: 10px;
+    width: 100%;
+}
+
+.oxidized-node-form-section .table-forms > li {
+    display: contents;
+}
+
+.oxidized-node-form-section .table-forms .table-forms-td-left {
+    display: block;
+    grid-column: 1;
+    text-align: right;
+}
+
+.oxidized-node-form-section .table-forms .table-forms-td-right {
+    display: block;
+    grid-column: 2;
+    min-width: 0;
 }
