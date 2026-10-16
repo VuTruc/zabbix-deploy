@@ -59,13 +59,15 @@ $filterGrid = (new CFormGrid())
             ->setWidth(ZBX_TEXTAREA_SMALL_WIDTH)->setAttribute('placeholder', 'YYYY-MM-DD'))
     ]);
 $filterForm->addItem($filterGrid);
-$filterForm->addItem(new CFormActions(
-    new CSubmit('apply', _('Apply filters')),
-    [new CLink(
-        _('Clear filters'),
-        (new CUrl('zabbix.php'))->setArgument('action', 'tacacs.auditlogs')->getUrl()
-    )]
-));
+$filterForm->addItem(
+    (new CFormActions(
+        new CSubmit('apply', _('Apply filters')),
+        [new CLink(
+            _('Clear filters'),
+            (new CUrl('zabbix.php'))->setArgument('action', 'tacacs.auditlogs')->getUrl()
+        )]
+    ))->addClass('tacacs-form-buttons')
+);
 
 $csvUrl = (new CUrl('zabbix.php'))->setArgument('action', 'tacacs.auditlogs.csv');
 foreach ($filters as $key => $value) {

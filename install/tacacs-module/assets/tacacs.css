@@ -15,6 +15,12 @@
     margin-bottom: 30px;
 }
 
+/* Audit Logs has 4 cards, not 5 — give them the full row instead of
+ * leaving a trailing empty column sized for the Dashboard's 5th card. */
+.tacacs-stats:has(> :nth-child(4):last-child) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .tacacs-dashboard .tacacs-stat {
     min-width: 0;
     min-height: 125px;
