@@ -106,10 +106,25 @@ foreach ($data['versions'] as $index => $version) {
         '#'.($total - $index).($index === 0 ? ' ('._('latest').')' : ''),
         $version['time'] !== null ? date('d/m/Y H:i:s', $version['time']) : '—',
         $version['message'],
-        (new CDiv([
-            (new CLink(_('View'), $config_url($node, $version['oid'])))->addClass('btn'),
-            (new CLink(_('Download'), $download_url($node, $version['oid'])))->addClass('btn')
-        ]))->addClass('oxidized-node-actions')
+        (new CDiv(array_merge(
+            [
+                (new CLink(_('View'), $config_url($node, $version['oid'])))->addClass('btn'),
+                (new CLink(_('Download'), $download_url($node, $version['oid'])))->addClass('btn')
+            ],
+            // Compare needs another version to pick on the compare page.
+            $total > 1
+                ? [
+                    (new CLink(
+                        _('Compare'),
+                        (new CUrl('zabbix.php'))
+                            ->setArgument('action', 'oxidized.compare')
+                            ->setArgument('node', $node)
+                            ->setArgument('oid', $version['oid'])
+                            ->getUrl()
+                    ))->addClass('btn')
+                ]
+                : []
+        )))->addClass('oxidized-node-actions')
     ]);
 
     if ($is_selected) {

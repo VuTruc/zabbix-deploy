@@ -22,6 +22,10 @@
         "oxidized.config.download": {
             "class": "OxidizedConfigDownload",
             "view": null
+        },
+        "oxidized.compare": {
+            "class": "OxidizedCompare",
+            "view": "oxidized.compare"
         }
     }
 }

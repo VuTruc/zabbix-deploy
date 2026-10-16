@@ -21,7 +21,7 @@ class Module extends CModule {
                         // (Nodes > Config), so Oxidized Web has no menu entry.
                         (new CMenuItem(_('Nodes')))
                             ->setAction('oxidized.nodes')
-                            ->setAliases(['oxidized.config'])
+                            ->setAliases(['oxidized.config', 'oxidized.compare'])
                     ]))
             );
     }

@@ -214,3 +214,101 @@ main :is(button, .btn, .btn-alt):not(.btn-icon):not(.btn-link):not(.btn-grey):no
     .oxidized-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .oxidized-dashboard-grid { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Compare (oxidized.compare): two aligned columns in one scroll box. */
+.oxidized-compare-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 16px;
+    margin-bottom: 10px;
+}
+
+.oxidized-compare-side {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.oxidized-compare-side strong {
+    line-height: 24px;
+}
+
+.oxidized-compare-caption {
+    font-size: 11px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    opacity: 0.75;
+}
+
+.oxidized-compare-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 10px;
+}
+
+.oxidized-diff-count-del { color: #e03131; }
+.oxidized-diff-count-add { color: #2f9e44; }
+.oxidized-diff-same-note { opacity: 0.75; }
+
+.oxidized-compare-hint {
+    margin-bottom: 10px;
+    opacity: 0.75;
+}
+
+.oxidized-compare-scroll {
+    height: 480px;
+    min-height: 240px;
+    overflow: auto;
+    border: 1px solid rgba(127, 140, 155, 0.35);
+    border-radius: 4px;
+    background: rgba(127, 140, 155, 0.08);
+}
+
+.oxidized-compare-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.oxidized-compare-table col.oxidized-compare-num {
+    width: 52px;
+}
+
+.oxidized-compare-table td {
+    padding: 0 8px;
+    vertical-align: top;
+}
+
+.oxidized-compare-no {
+    text-align: right;
+    opacity: 0.55;
+    user-select: none;
+    font-variant-numeric: tabular-nums;
+}
+
+.oxidized-compare-code {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+/* Divider between the two sides. */
+.oxidized-compare-table td:nth-child(3) {
+    border-left: 1px solid rgba(127, 140, 155, 0.35);
+}
+
+.oxidized-diff-del { background: rgba(224, 49, 49, 0.14); }
+.oxidized-diff-add { background: rgba(47, 158, 68, 0.14); }
+
+.oxidized-compare-table.oxidized-only-diff tr.oxidized-row-same {
+    display: none;
+}
+
+@media (max-width: 900px) {
+    .oxidized-compare-header { grid-template-columns: minmax(0, 1fr); }
+}
