@@ -77,7 +77,7 @@ if (!empty($data['page_locked'])) {
 
         $setupGrid = (new CFormGrid())
             ->addItem([
-                (new CLabel(_('New page password'), 'new_page_password'))->setAsteriskMark(),
+                (new CLabel(_('New Page Password'), 'new_page_password'))->setAsteriskMark(),
                 new CFormField(
                     (new CPassBox('new_page_password'))
                         ->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
@@ -86,7 +86,7 @@ if (!empty($data['page_locked'])) {
                 )
             ])
             ->addItem([
-                (new CLabel(_('Confirm page password'), 'confirm_page_password'))->setAsteriskMark(),
+                (new CLabel(_('Confirm Page Password'), 'confirm_page_password'))->setAsteriskMark(),
                 new CFormField(
                     (new CPassBox('confirm_page_password'))
                         ->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
@@ -97,12 +97,12 @@ if (!empty($data['page_locked'])) {
 
         $setupForm->addItem($setupGrid);
         $setupForm->addItem(
-            new CFormActions(new CSubmit('submit', _('Set page password')))
+            new CFormActions(new CSubmit('submit', _('Set Page Password')))
         );
 
         $lockScreen->addItem(
             (new CDiv([
-                (new CTag('h2', true, _('Set password')))
+                (new CTag('h2', true, _('Set Password')))
                     ->addClass('tacacs-section-title'),
                 $setupForm
             ]))->addClass('tacacs-assignment-section')
@@ -155,7 +155,7 @@ if (!empty($data['page_locked'])) {
                     )
                 ])
                 ->addItem([
-                    (new CLabel(_('New password'), 'new_page_password'))->setAsteriskMark(),
+                    (new CLabel(_('New Password'), 'new_page_password'))->setAsteriskMark(),
                     new CFormField(
                         (new CPassBox('new_page_password'))
                             ->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
@@ -164,7 +164,7 @@ if (!empty($data['page_locked'])) {
                     )
                 ])
                 ->addItem([
-                    (new CLabel(_('Confirm new password'), 'confirm_page_password'))->setAsteriskMark(),
+                    (new CLabel(_('Confirm New Password'), 'confirm_page_password'))->setAsteriskMark(),
                     new CFormField(
                         (new CPassBox('confirm_page_password'))
                             ->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
@@ -436,7 +436,7 @@ $policySelect = (new CSelect('policy_id'))
     ->setValue($isEdit && $editAssignment['policy_id'] !== null ? (string) $editAssignment['policy_id'] : '')
     ->setFocusableElementId('label-policy_id')
     ->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
-    ->addOption(new CSelectOption('', _('No policy')))
+    ->addOption(new CSelectOption('', _('No Policy')))
     ->addOptions(CSelect::createOptionsFromArray($policyOptions));
 
 $policyHelp = [
@@ -655,7 +655,7 @@ $table->setHeader([
     _('Access Level'),
     _('Command Policy'),
     (new CColHeader(_('Created')))->addClass('tacacs-col-time'),
-    (new CColHeader(_('Last modified')))->addClass('tacacs-col-time'),
+    (new CColHeader(_('Last Modified')))->addClass('tacacs-col-time'),
     _('Actions')
 ]);
 
@@ -692,7 +692,7 @@ foreach ($data['assignments'] as $assignment) {
             (string) ($assignment['access_custom'] ?? '')
         ),
         $assignment['policy_name'] === null
-            ? _('Device level permissions')
+            ? _('Device Level Permissions')
             : (VendorProfiles::supportsCommandPolicy((string) $assignment['device_vendor'])
                 ? $assignment['policy_name']
                 : $assignment['policy_name'].' '._('(not enforced by this device)')),
@@ -723,7 +723,7 @@ $pagePasswordChangeForm->addVar('page_action', 'change_page_password');
 
 $pagePasswordChangeGrid = (new CFormGrid())
     ->addItem([
-        (new CLabel(_('Current page password'), 'current_page_password'))->setAsteriskMark(),
+        (new CLabel(_('Current Page Password'), 'current_page_password'))->setAsteriskMark(),
         new CFormField(
             (new CPassBox('current_page_password'))
                 ->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
@@ -732,7 +732,7 @@ $pagePasswordChangeGrid = (new CFormGrid())
         )
     ])
     ->addItem([
-        (new CLabel(_('New page password'), 'new_page_password'))->setAsteriskMark(),
+        (new CLabel(_('New Page Password'), 'new_page_password'))->setAsteriskMark(),
         new CFormField(
             (new CPassBox('new_page_password'))
                 ->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
@@ -741,7 +741,7 @@ $pagePasswordChangeGrid = (new CFormGrid())
         )
     ])
     ->addItem([
-        (new CLabel(_('Confirm page password'), 'confirm_page_password'))->setAsteriskMark(),
+        (new CLabel(_('Confirm Page Password'), 'confirm_page_password'))->setAsteriskMark(),
         new CFormField(
             (new CPassBox('confirm_page_password'))
                 ->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)

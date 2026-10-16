@@ -20,13 +20,13 @@ $csvCell = static function ($value): string {
 $csv = [[
     _('Time'),
     _('Device'),
-    _('Device address'),
+    _('Device Address'),
     _('Username'),
-    _('Source address'),
-    _('Event type'),
+    _('Source Address'),
+    _('Event Type'),
     _('Action'),
     _('Command'),
-    _('Command arguments'),
+    _('Command Arguments'),
     _('Result'),
     _('Details'),
     _('Task ID')

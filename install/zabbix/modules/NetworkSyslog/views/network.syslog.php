@@ -149,7 +149,7 @@ if (isset($data['ip'])) {
 
     $navigation->addItem(
         (new CLink(
-            _('Download file'),
+            _('Download File'),
             $download_url
         ))->addClass('btn')
     );
@@ -192,11 +192,11 @@ if (isset($data['ip'])) {
      */
     $log_section->addItem(
         (new CDiv(
-            _('Total lines').': '.$total_lines.
+            _('Total Lines').': '.$total_lines.
             ' | '.
             _('Page').': '.$page.' / '.$total_pages.
             ' | '.
-            _('Lines per page').': '.$lines_per_page
+            _('Lines Per Page').': '.$lines_per_page
         ))->addClass('networksyslog-meta')
     );
 
@@ -207,7 +207,7 @@ if (isset($data['ip'])) {
 
         $table = (new CTableInfo())
             ->setHeader([
-                _('Log message')
+                _('Log Message')
             ]);
 
         foreach ($lines as $line) {
@@ -445,9 +445,9 @@ $summary_stats = (new CDiv())
     ->addClass('networksyslog-stats');
 
 foreach ([
-    ['all', _('Discovered devices'), $total_devices],
-    ['syslog', _('Devices with syslog'), $syslog_devices],
-    ['events', _('Devices with events'), $event_devices]
+    ['all', _('Discovered Devices'), $total_devices],
+    ['syslog', _('Devices With Syslog'), $syslog_devices],
+    ['events', _('Devices With Events'), $event_devices]
 ] as [$stat_kind, $stat_title, $stat_value]) {
     $summary_stats->addItem(
         (new CLink(

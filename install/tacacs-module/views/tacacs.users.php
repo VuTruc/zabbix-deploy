@@ -129,7 +129,7 @@ if (!$is_edit) {
 		_('Description'),
 		_('Status'),
 		(new CColHeader(_('Created')))->addClass('tacacs-col-time'),
-		(new CColHeader(_('Last modified')))->addClass('tacacs-col-time'),
+		(new CColHeader(_('Last Modified')))->addClass('tacacs-col-time'),
 		_('Actions')
 	]);
 

@@ -131,7 +131,7 @@ $policy_table->setHeader([
 	_('Description'),
 	_('Status'),
 	(new CColHeader(_('Created')))->addClass('tacacs-col-time'),
-	(new CColHeader(_('Last modified')))->addClass('tacacs-col-time'),
+	(new CColHeader(_('Last Modified')))->addClass('tacacs-col-time'),
 	_('Actions')
 ]);
 
@@ -265,7 +265,7 @@ $rule_grid = (new CFormGrid())
 		)
 	])
 	->addItem([
-		new CLabel(_('Command arguments'), 'command_args'),
+		new CLabel(_('Command Arguments'), 'command_args'),
 		new CFormField(
 			(new CTextBox(
 				'command_args',
@@ -359,7 +359,7 @@ $rule_table->setHeader([
 	_('Order'),
 	_('Status'),
 	(new CColHeader(_('Created')))->addClass('tacacs-col-time'),
-	(new CColHeader(_('Last modified')))->addClass('tacacs-col-time'),
+	(new CColHeader(_('Last Modified')))->addClass('tacacs-col-time'),
 	_('Actions')
 ]);
 

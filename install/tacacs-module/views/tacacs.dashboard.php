@@ -253,7 +253,7 @@ require_once dirname(__DIR__).'/include/VendorProfiles.php';
                             $assignment['username'],
                             $assignment['device_name'].' ('.$assignment['device_address'].')',
                             // No policy: the device applies its own level permissions.
-                            $assignment['policy_name'] ?? _('Device level permissions'),
+                            $assignment['policy_name'] ?? _('Device Level Permissions'),
                             $assignment['created_at']
                         ]);
                     }

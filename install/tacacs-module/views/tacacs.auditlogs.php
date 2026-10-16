@@ -9,7 +9,7 @@ $baseUrl = (new CUrl('zabbix.php'))->setArgument('action', 'tacacs.auditlogs');
 
 $deviceSelect = (new CSelect('device_id'))
     ->setValue((string) ($filters['device_id'] ?? 0))
-    ->addOption(new CSelectOption('0', _('All devices')));
+    ->addOption(new CSelectOption('0', _('All Devices')));
 foreach ($data['devices'] as $device) {
     $deviceSelect->addOption(new CSelectOption(
         (string) $device['id'],
@@ -18,19 +18,19 @@ foreach ($data['devices'] as $device) {
 }
 $eventSelect = (new CSelect('event_type'))
     ->setValue($filters['event_type'] ?? 'all')
-    ->addOption(new CSelectOption('all', _('All event types')))
-    ->addOption(new CSelectOption('accounting', _('Accounting / command history')))
+    ->addOption(new CSelectOption('all', _('All Event Types')))
+    ->addOption(new CSelectOption('accounting', _('Accounting / Command History')))
     ->addOption(new CSelectOption('authentication', _('Authentication')))
     ->addOption(new CSelectOption('authorization', _('Authorization')))
     ->addOption(new CSelectOption('config', _('Configuration')))
     ->addOption(new CSelectOption('system', _('System')));
 $resultSelect = (new CSelect('result'))
     ->setValue($filters['result'] ?? 'all')
-    ->addOption(new CSelectOption('all', _('All results')))
+    ->addOption(new CSelectOption('all', _('All Results')))
     ->addOption(new CSelectOption('success', _('Success')))
     ->addOption(new CSelectOption('denied', _('Denied')))
     ->addOption(new CSelectOption('failed', _('Failed')))
-    ->addOption(new CSelectOption('info', _('Recorded / information only')));
+    ->addOption(new CSelectOption('info', _('Recorded / Information Only')));
 
 $filterForm = new CForm();
 $filterForm->setAttribute('method', 'get');
@@ -39,31 +39,31 @@ $filterForm->addVar('action', 'tacacs.auditlogs');
 $filterGrid = (new CFormGrid())
     ->addItem([new CLabel(_('Device'), 'device_id'), new CFormField($deviceSelect)])
     ->addItem([
-        new CLabel(_('Username contains'), 'username'),
+        new CLabel(_('Username Contains'), 'username'),
         new CFormField((new CTextBox('username', $filters['username'] ?? ''))->setWidth(ZBX_TEXTAREA_SMALL_WIDTH))
     ])
     ->addItem([
-        new CLabel(_('Command / arguments contains'), 'command'),
+        new CLabel(_('Command / Arguments Contains'), 'command'),
         new CFormField((new CTextBox('command', $filters['command'] ?? ''))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH))
     ])
-    ->addItem([new CLabel(_('Event type'), 'event_type'), new CFormField($eventSelect)])
+    ->addItem([new CLabel(_('Event Type'), 'event_type'), new CFormField($eventSelect)])
     ->addItem([new CLabel(_('Result'), 'result'), new CFormField($resultSelect)])
     ->addItem([
-        new CLabel(_('From date'), 'date_from'),
+        new CLabel(_('From Date'), 'date_from'),
         new CFormField((new CTextBox('date_from', $filters['date_from'] ?? ''))
             ->setWidth(ZBX_TEXTAREA_SMALL_WIDTH)->setAttribute('placeholder', 'YYYY-MM-DD'))
     ])
     ->addItem([
-        new CLabel(_('To date'), 'date_to'),
+        new CLabel(_('To Date'), 'date_to'),
         new CFormField((new CTextBox('date_to', $filters['date_to'] ?? ''))
             ->setWidth(ZBX_TEXTAREA_SMALL_WIDTH)->setAttribute('placeholder', 'YYYY-MM-DD'))
     ]);
 $filterForm->addItem($filterGrid);
 $filterForm->addItem(
     (new CFormActions(
-        new CSubmit('apply', _('Apply filters')),
+        new CSubmit('apply', _('Apply Filters')),
         [new CLink(
-            _('Clear filters'),
+            _('Clear Filters'),
             (new CUrl('zabbix.php'))->setArgument('action', 'tacacs.auditlogs')->getUrl()
         )]
     ))->addClass('tacacs-form-buttons')
@@ -88,7 +88,7 @@ $htmlPage = (new CHtmlPage())
     ->setControls(
         (new CTag('nav', true,
             (new CList())->addItem(
-                (new CRedirectButton(_('Export to CSV'), $csvUrl))->setId('export_csv')
+                (new CRedirectButton(_('Export To CSV'), $csvUrl))->setId('export_csv')
             )
         ))->setAttribute('aria-label', _('Content controls'))
     );
@@ -98,7 +98,7 @@ if (!empty($data['error'])) {
 $summaryCards = [];
 foreach ([
     'total' => _('Records'),
-    'commands' => _('Command records'),
+    'commands' => _('Command Records'),
     'denied' => _('Denied'),
     'failed' => _('Failed')
 ] as $key => $label) {
@@ -117,13 +117,13 @@ $htmlPage->addItem($filterForm);
 $table = new CTableInfo();
 $table->setHeader([
     (new CColHeader(_('Time')))->addClass('tacacs-col-time'),
-    _('Device'), _('Username'), _('Source address'),
+    _('Device'), _('Username'), _('Source Address'),
     _('Event'), _('Action'), _('Command'), _('Result'), _('Details')
 ]);
 foreach ($data['rows'] as $row) {
     $deviceName = trim((string) ($row['device_name'] ?? ''));
     if ($deviceName === '') {
-        $deviceName = _('Unknown device');
+        $deviceName = _('Unknown Device');
     }
     $deviceAddress = (string) ($row['device_address'] ?? '');
     if ($deviceAddress !== '') {

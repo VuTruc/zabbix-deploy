@@ -56,7 +56,7 @@ if ($selected !== null) {
     );
 }
 else {
-    $config_title = _('Current configuration');
+    $config_title = _('Current Configuration');
 }
 
 $config_actions = [
@@ -67,7 +67,7 @@ $config_actions = [
 ];
 
 if ($selected !== null) {
-    $config_actions[] = (new CLink(_('Show current'), $config_url($node)))->addClass('btn');
+    $config_actions[] = (new CLink(_('Show Current'), $config_url($node)))->addClass('btn');
 }
 
 if ($data['config'] !== null) {

@@ -12,12 +12,12 @@ $action_url = (new CUrl('zabbix.php'))
     ->getUrl();
 
 $html_page = (new CHtmlPage())
-    ->setTitle(_('Oxidized nodes'));
+    ->setTitle(_('Oxidized Nodes'));
 
 $html_page->addItem(getMessages());
 
 if ($data['edit'] !== null) {
-    $form_title = _('Edit node');
+    $form_title = _('Edit Node');
 
     $original_name = $data['edit']['name'];
     $node_name = $data['edit']['name'];
@@ -28,7 +28,7 @@ if ($data['edit'] !== null) {
     $node_interval_days = (string) ($data['edit']['interval_days'] ?? 1);
 }
 else {
-    $form_title = _('Add node');
+    $form_title = _('Add Node');
 
     $original_name = '';
     $node_name = '';
@@ -302,8 +302,8 @@ foreach ($data['nodes'] as $node) {
     );
 
     $ssh_status = $node['has_credentials']
-        ? _('Node credentials')
-        : _('Global credentials');
+        ? _('Node Credentials')
+        : _('Global Credentials');
 
     if (
         $node['interval_days'] !== null
@@ -319,7 +319,7 @@ foreach ($data['nodes'] as $node) {
             );
     }
     else {
-        $interval = _('Not configured');
+        $interval = _('Not Configured');
     }
 
     if (
@@ -332,7 +332,7 @@ foreach ($data['nodes'] as $node) {
         );
     }
     else {
-        $next_backup = _('Not configured');
+        $next_backup = _('Not Configured');
     }
 
     // Last run reported by Oxidized: time (DD/MM/YYYY HH:MM:SS) and status.
@@ -348,7 +348,7 @@ foreach ($data['nodes'] as $node) {
     }
 
     if ($is_bootstrap) {
-        $actions = _('Protected bootstrap node');
+        $actions = _('Protected Bootstrap Node');
     }
     else {
         $edit_url = (new CUrl(
@@ -468,7 +468,7 @@ $html_page->addItem(
         (new CTag(
             'h2',
             true,
-            _('Configured nodes')
+            _('Configured Nodes')
         ))->addClass('oxidized-section-title'),
         $table,
         (new CDiv($reload_form))->addClass('oxidized-reload')

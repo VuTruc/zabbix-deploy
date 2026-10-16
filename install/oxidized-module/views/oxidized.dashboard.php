@@ -143,11 +143,11 @@ foreach ($data['failed'] as $row) {
 $html_page->addItem(
     (new CDiv([
         (new CDiv([
-            (new CTag('h2', true, _('Last runs')))->addClass('oxidized-section-title'),
+            (new CTag('h2', true, _('Last Runs')))->addClass('oxidized-section-title'),
             $runs_table
         ]))->addClass('oxidized-nodes-table-section'),
         (new CDiv([
-            (new CTag('h2', true, _('Failed nodes')))->addClass('oxidized-section-title'),
+            (new CTag('h2', true, _('Failed Nodes')))->addClass('oxidized-section-title'),
             $failed_table
         ]))
             ->addClass('oxidized-nodes-table-section')

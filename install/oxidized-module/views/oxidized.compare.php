@@ -20,7 +20,7 @@ $config_url = (new CUrl('zabbix.php'))
 $html_page = (new CHtmlPage())
     ->setTitle(_s('Compare: %1$s', $node))
     ->setControls(
-        (new CLink(_('Back to Config'), $config_url))->addClass('btn')
+        (new CLink(_('Back To Config'), $config_url))->addClass('btn')
     );
 
 /*
@@ -107,7 +107,7 @@ if ($data['diff'] !== null) {
             ->addClass('oxidized-diff-count-add'),
         (new CTag('label', true, [
             (new CInput('checkbox', 'only_diff', '1'))->setId('oxidized-only-diff'),
-            ' '._('Only differences')
+            ' '._('Only Differences')
         ]))->setAttribute('for', 'oxidized-only-diff')
     ]))->addClass('oxidized-compare-summary');
 
@@ -125,11 +125,11 @@ if ($data['diff'] !== null) {
 
 $header = (new CDiv([
     (new CDiv([
-        (new CSpan(_('Selected version')))->addClass('oxidized-compare-caption'),
+        (new CSpan(_('Selected Version')))->addClass('oxidized-compare-caption'),
         (new CTag('strong', true, $version_label($base)))
     ]))->addClass('oxidized-compare-side'),
     (new CDiv([
-        (new CSpan(_('Compare with')))->addClass('oxidized-compare-caption'),
+        (new CSpan(_('Compare With')))->addClass('oxidized-compare-caption'),
         $picker
     ]))->addClass('oxidized-compare-side')
 ]))->addClass('oxidized-compare-header');

@@ -153,8 +153,8 @@ $device_form = (new CFormGrid())
         ->addItem([
                 (new CLabel(
                         $is_edit
-                                ? _('Shared secret (leave empty to keep current)')
-                                : _('Shared secret'),
+                                ? _('Shared Secret (leave empty to keep current)')
+                                : _('Shared Secret'),
                         'shared_secret'
                 ))->setAsteriskMark(!$is_edit),
 
@@ -267,7 +267,7 @@ if (!$is_edit) {
                 _('Status'),
                 _('Description'),
                 (new CColHeader(_('Created')))->addClass('tacacs-col-time'),
-                (new CColHeader(_('Last modified')))->addClass('tacacs-col-time'),
+                (new CColHeader(_('Last Modified')))->addClass('tacacs-col-time'),
                 _('Actions')
         ]);
 
