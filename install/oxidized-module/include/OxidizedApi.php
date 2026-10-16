@@ -71,6 +71,11 @@ class OxidizedApi {
      * Last backup run per node from the Oxidized API:
      * name => ['time' => unix timestamp|null, 'status' => never|success|no_connection|...].
      * Returns null when the API does not answer.
+     *
+     * Oxidized only keeps run history in memory, so a restarted process
+     * reports "never" for every node regardless of past backups. When that
+     * happens, fall back to the persisted version history (survives
+     * restarts) and treat the newest stored version as a successful run.
      */
     public static function lastRuns(): ?array {
         $body = self::get('/nodes.json');
@@ -87,13 +92,26 @@ class OxidizedApi {
                 continue;
             }
 
+            $name = (string) $entry['name'];
+
             $time = isset($entry['time']) && is_string($entry['time'])
                 ? strtotime($entry['time'])
                 : false;
+            $status = (string) ($entry['status'] ?? '');
 
-            $runs[(string) $entry['name']] = [
+            if ($time === false) {
+                $versions = self::versions($name);
+                $latest = $versions[0] ?? null;
+
+                if ($latest !== null && $latest['time'] !== null) {
+                    $time = $latest['time'];
+                    $status = 'success';
+                }
+            }
+
+            $runs[$name] = [
                 'time' => $time !== false ? $time : null,
-                'status' => (string) ($entry['status'] ?? '')
+                'status' => $status
             ];
         }
 

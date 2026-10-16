@@ -301,6 +301,11 @@ foreach ($data['nodes'] as $node) {
             $data['bootstrap_ip']
     );
 
+    // Placeholder that keeps Oxidized running; not a real device.
+    if ($is_bootstrap) {
+        continue;
+    }
+
     $ssh_status = $node['has_credentials']
         ? _('Node Credentials')
         : _('Global Credentials');
@@ -452,7 +457,7 @@ foreach ($data['nodes'] as $node) {
 
     $table->addRow([
         $node['name'],
-        $node['model'],
+        $node_models[$node['model']] ?? $node['model'],
         $node['ip'],
         $ssh_status,
         $node['ssh_port'],
