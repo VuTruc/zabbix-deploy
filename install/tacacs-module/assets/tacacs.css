@@ -954,7 +954,7 @@ body.tacacs-modal-open {
     gap: 10px;
     width: 100% !important;
     max-width: 760px !important;
-    margin: 14px auto 0 !important;
+    margin: 16px auto 0 !important;
     padding: 0 !important;
     overflow: visible !important;
 }
@@ -1048,7 +1048,7 @@ body.tacacs-modal-open {
     gap: 10px;
     width: 100% !important;
     max-width: 760px !important;
-    margin: 14px auto 0 !important;
+    margin: 16px auto 0 !important;
     padding: 0 0 20px !important;
     overflow: visible !important;
 }
@@ -1141,7 +1141,7 @@ body.tacacs-modal-open {
     gap: 10px;
     width: 100% !important;
     max-width: 760px !important;
-    margin: 14px auto 0 !important;
+    margin: 16px auto 0 !important;
     padding: 0 0 6px !important;
     overflow: visible !important;
 }
@@ -1228,7 +1228,7 @@ body.tacacs-modal-open {
     row-gap: 0;
     width: 100% !important;
     max-width: 760px !important;
-    margin: 14px auto 0 !important;
+    margin: 16px auto 0 !important;
     padding: 0 0 12px !important;
     overflow: visible !important;
 }
@@ -1365,7 +1365,7 @@ body.tacacs-modal-open {
     gap: 10px;
     width: 100% !important;
     max-width: 760px !important;
-    margin: 14px auto 0 !important;
+    margin: 16px auto 0 !important;
     padding: 0 0 18px !important;
     overflow: visible !important;
 }
