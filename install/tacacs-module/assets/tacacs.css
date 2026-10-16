@@ -2003,11 +2003,17 @@ form > .form-actions.tacacs-form-buttons {
     justify-content: center;
 }
 
-/* The inputs (453px, the widest) sit in the middle column, centered on the
- * same axis as the buttons; labels hug them from the left column. Help text
- * wraps within the input width. */
+/* The inputs sit in a 340px middle column, centered on the same axis as the
+ * buttons; labels hug them from the left column. Inputs fill the column and
+ * help text wraps within it. Same layout on Oxidized > Nodes. */
 form:has(> .form-actions.tacacs-form-buttons) > .form-grid {
-    grid-template-columns: minmax(0, 1fr) 453px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) 340px minmax(0, 1fr);
+}
+
+form:has(> .form-actions.tacacs-form-buttons) > .form-grid > :is(.form-field, .field-fluid) :is(input[type="text"], input[type="password"], textarea, z-select) {
+    box-sizing: border-box;
+    width: 100% !important;
+    max-width: 100%;
 }
 
 form:has(> .form-actions.tacacs-form-buttons) > .form-grid > label {

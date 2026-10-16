@@ -338,11 +338,11 @@ main table.list-table:has(tbody td:last-child :is(.btn, button)) td:last-child >
 }
 /* END centered button columns v1 */
 
-/* Add node: inputs (453px) centered on the buttons' axis, labels to their
- * left; same layout as the TACACS+ forms. */
+/* Add node: inputs in a 340px column centered on the buttons' axis, labels
+ * to their left; same layout as the TACACS+ forms. */
 .oxidized-node-form-section .table-forms {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 453px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) 340px minmax(0, 1fr);
     column-gap: 10px;
     width: 100%;
 }
@@ -361,4 +361,10 @@ main table.list-table:has(tbody td:last-child :is(.btn, button)) td:last-child >
     display: block;
     grid-column: 2;
     min-width: 0;
+}
+
+.oxidized-node-form-section .table-forms .table-forms-td-right :is(input[type="text"], input[type="password"], textarea, z-select) {
+    box-sizing: border-box;
+    width: 100% !important;
+    max-width: 100%;
 }
