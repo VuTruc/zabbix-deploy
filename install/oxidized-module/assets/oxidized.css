@@ -152,14 +152,27 @@ main :is(button, .btn, .btn-alt):not(.btn-icon):not(.btn-link):not(.btn-grey):no
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 12px;
-    margin-bottom: 24px;
 }
 
+/* Same card as the TACACS+ Dashboard (.tacacs-stat), with a colored top edge. */
 .oxidized-stat {
-    padding: 14px 16px;
-    background: #ffffff;
+    display: block;
+    box-sizing: border-box;
+    min-width: 0;
+    min-height: 125px;
+    padding: 16px 14px;
+    border: 1px solid #d9dce1;
     border-top: 3px solid #9aa4ad;
     border-radius: 8px;
+    background: #ffffff;
+    text-decoration: none;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.oxidized-stat:hover {
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
 }
 
 .oxidized-stat-all { border-top-color: #0275b8; }
@@ -168,22 +181,25 @@ main :is(button, .btn, .btn-alt):not(.btn-icon):not(.btn-link):not(.btn-grey):no
 .oxidized-stat-never { border-top-color: #868e96; }
 .oxidized-stat-due { border-top-color: #e67700; }
 
-.oxidized-stat-label {
-    font-size: 11px;
-    letter-spacing: 0.6px;
-    text-transform: uppercase;
-    opacity: 0.75;
+.oxidized-stat-title {
+    margin-bottom: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.4;
 }
 
 .oxidized-stat-value {
-    margin-top: 4px;
-    font-size: 30px;
+    margin-bottom: 8px;
+    font-size: 32px;
     font-weight: 700;
+    line-height: 1.2;
     font-variant-numeric: tabular-nums;
 }
 
-.oxidized-stat-hint {
-    opacity: 0.75;
+.oxidized-stat-link {
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.4;
 }
 
 .oxidized-dashboard-grid {

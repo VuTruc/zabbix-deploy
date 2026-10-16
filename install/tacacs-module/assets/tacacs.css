@@ -1984,3 +1984,16 @@ main .tacacs-apply-bar .tacacs-apply-manual-button {
     width: 150px;
     white-space: nowrap;
 }
+
+/* Dashboard cards: colored top edge per card (Users, Devices, Policies,
+ * Rules, Assignments), like the Oxidized Dashboard. */
+.tacacs-stats > .tacacs-stat {
+    border-top-width: 3px;
+    border-top-style: solid;
+}
+
+.tacacs-stats > .tacacs-stat:nth-child(1) { border-top-color: #0275b8; }
+.tacacs-stats > .tacacs-stat:nth-child(2) { border-top-color: #2f9e44; }
+.tacacs-stats > .tacacs-stat:nth-child(3) { border-top-color: #7048e8; }
+.tacacs-stats > .tacacs-stat:nth-child(4) { border-top-color: #e67700; }
+.tacacs-stats > .tacacs-stat:nth-child(5) { border-top-color: #1098ad; }

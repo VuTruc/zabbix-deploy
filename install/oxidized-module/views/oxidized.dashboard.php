@@ -44,31 +44,42 @@ if (!$data['api_available']) {
 }
 
 /*
- * Summary cards.
+ * Summary cards, same layout as the TACACS+ Dashboard: each card links to
+ * where the nodes behind the number are listed.
  */
+$failed_anchor = '#oxidized-failed-nodes';
+
 $cards = [
-    ['all', _('Nodes'), $data['stats']['nodes'], _('in router.db')],
-    ['ok', _('Backup OK'), $data['stats']['ok'], _('last run success')],
-    ['failed', _('Failed'), $data['stats']['failed'], _('last run failed')],
-    ['never', _('Never'), $data['stats']['never'], _('no backup yet')],
-    ['due', _('Due in 24h'), $data['stats']['due'], _('by Next Backup')]
+    ['all', _('Nodes'), $data['stats']['nodes'], _('View Nodes →'), $nodes_url],
+    ['ok', _('Backup OK'), $data['stats']['ok'], _('View Nodes →'), $nodes_url],
+    ['failed', _('Failed'), $data['stats']['failed'], _('View Failed →'), $failed_anchor],
+    ['never', _('Never'), $data['stats']['never'], _('View Nodes →'), $nodes_url],
+    ['due', _('Due in 24h'), $data['stats']['due'], _('View Schedule →'), $nodes_url]
 ];
 
 $stats = (new CDiv())->addClass('oxidized-stats');
 
-foreach ($cards as [$kind, $label, $value, $hint]) {
+foreach ($cards as [$kind, $label, $value, $link_text, $url]) {
     $stats->addItem(
-        (new CDiv([
-            (new CDiv($label))->addClass('oxidized-stat-label'),
-            (new CDiv((string) $value))->addClass('oxidized-stat-value'),
-            (new CDiv($hint))->addClass('oxidized-stat-hint')
-        ]))
+        (new CLink(
+            new CTag('div', true, [
+                (new CDiv($label))->addClass('oxidized-stat-title'),
+                (new CDiv((string) $value))->addClass('oxidized-stat-value'),
+                (new CDiv($link_text))->addClass('oxidized-stat-link')
+            ]),
+            $url
+        ))
             ->addClass('oxidized-stat')
             ->addClass('oxidized-stat-'.$kind)
     );
 }
 
-$html_page->addItem($stats);
+$html_page->addItem(
+    (new CDiv([
+        (new CTag('h2', true, _('Overview')))->addClass('oxidized-section-title'),
+        $stats
+    ]))->addClass('oxidized-nodes-table-section')
+);
 
 /*
  * Last run of every node, problems first.
@@ -139,7 +150,9 @@ $html_page->addItem(
         (new CDiv([
             (new CTag('h2', true, _('Failed nodes')))->addClass('oxidized-section-title'),
             $failed_table
-        ]))->addClass('oxidized-nodes-table-section')
+        ]))
+            ->addClass('oxidized-nodes-table-section')
+            ->setId('oxidized-failed-nodes')
     ]))->addClass('oxidized-dashboard-grid')
 );
 
