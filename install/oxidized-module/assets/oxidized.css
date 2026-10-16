@@ -337,3 +337,9 @@ main table.list-table:has(tbody td:last-child :is(.btn, button)) td:last-child >
     justify-content: center;
 }
 /* END centered button columns v1 */
+
+/* Add node: center the fields block like the Add / Clear buttons. */
+.oxidized-node-form-section .table-forms {
+    width: auto;
+    margin: 0 auto;
+}

@@ -2003,6 +2003,13 @@ form > .form-actions.tacacs-form-buttons {
     justify-content: center;
 }
 
+/* Center the fields block too, so it lines up with the centered buttons.
+ * Inputs are 453px wide; longer help text wraps within 480px. */
+form:has(> .form-actions.tacacs-form-buttons) > .form-grid {
+    grid-template-columns: max-content minmax(0, 480px);
+    justify-content: center;
+}
+
 /* BEGIN centered button columns v1
  * In a list whose last column holds buttons (Actions), center that column's
  * header and its buttons. Tables without buttons are not affected. Kept
