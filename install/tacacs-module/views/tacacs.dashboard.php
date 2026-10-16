@@ -4,6 +4,7 @@ $this->addCssFile('modules/Tacacs/assets/tacacs.css');
 
 require_once dirname(__DIR__).'/include/ApplyQueue.php';
 require_once dirname(__DIR__).'/include/VendorProfiles.php';
+require_once dirname(__DIR__).'/include/DateFormat.php';
 
 (new CHtmlPage())
     ->setTitle(_('TACACS+ Dashboard'))
@@ -135,7 +136,7 @@ require_once dirname(__DIR__).'/include/VendorProfiles.php';
                         _('Username'),
                         _('Description'),
                         _('Status'),
-                        _('Created')
+                        (new CColHeader(_('Created')))->addClass('tacacs-col-time')
                     ]);
 
                     foreach ($data['users'] as $user) {
@@ -145,7 +146,7 @@ require_once dirname(__DIR__).'/include/VendorProfiles.php';
                             $user['enabled']
                                 ? _('Enabled')
                                 : _('Disabled'),
-                            $user['created_at']
+                            (new CCol(\Modules\Tacacs\DateFormat::dateTime($user['created_at'])))->addClass('tacacs-col-time')
                         ]);
                     }
 
@@ -245,7 +246,7 @@ require_once dirname(__DIR__).'/include/VendorProfiles.php';
                         _('User'),
                         _('Device'),
                         _('Policy'),
-                        _('Created')
+                        (new CColHeader(_('Created')))->addClass('tacacs-col-time')
                     ]);
 
                     foreach ($data['assignments'] as $assignment) {
@@ -254,7 +255,7 @@ require_once dirname(__DIR__).'/include/VendorProfiles.php';
                             $assignment['device_name'].' ('.$assignment['device_address'].')',
                             // No policy: the device applies its own level permissions.
                             $assignment['policy_name'] ?? _('Device Level Permissions'),
-                            $assignment['created_at']
+                            (new CCol(\Modules\Tacacs\DateFormat::dateTime($assignment['created_at'])))->addClass('tacacs-col-time')
                         ]);
                     }
 

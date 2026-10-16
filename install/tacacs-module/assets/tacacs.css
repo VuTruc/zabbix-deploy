@@ -25,10 +25,17 @@
 
 .tacacs-stats:has(> :nth-child(4):last-child) .tacacs-stat {
     min-height: 110px;
+    padding: 16px 14px;
 }
 
-.tacacs-stats:has(> :nth-child(4):last-child) .tacacs-stat-title,
+.tacacs-stats:has(> :nth-child(4):last-child) .tacacs-stat-title {
+    font-size: 16px;
+    margin-bottom: 8px;
+    color: #0275b8;
+}
+
 .tacacs-stats:has(> :nth-child(4):last-child) .tacacs-stat-value {
+    margin-bottom: 0;
     color: #0275b8;
 }
 
