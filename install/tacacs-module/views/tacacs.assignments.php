@@ -753,7 +753,7 @@ $pagePasswordChangeGrid = (new CFormGrid())
 $pagePasswordChangeForm->addItem($pagePasswordChangeGrid);
 $pagePasswordChangeForm->addItem(
     (new CFormActions(
-        new CSubmit('submit', _('Change page password')),
+        new CSubmit('submit', _('Change Password')),
         [
             (new CButton('clear', _('Clear')))
                 ->onClick('this.form.reset();')

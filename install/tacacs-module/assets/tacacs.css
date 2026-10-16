@@ -2027,6 +2027,16 @@ form:has(> .form-actions.tacacs-form-buttons) > .form-grid > :is(.form-field, .f
     min-width: 0;
 }
 
+form:has(> .form-actions.tacacs-form-buttons) > .form-actions.tacacs-form-buttons button {
+    min-width: 150px;
+}
+
+@media (max-width: 600px) {
+    form:has(> .form-actions.tacacs-form-buttons) > .form-actions.tacacs-form-buttons button {
+        min-width: 130px;
+    }
+}
+
 /* BEGIN centered button columns v1
  * In a list whose last column holds buttons (Actions), center that column's
  * header and its buttons. Tables without buttons are not affected. Kept
