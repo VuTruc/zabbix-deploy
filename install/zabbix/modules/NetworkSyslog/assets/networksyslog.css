@@ -18,7 +18,8 @@
     font-size: 20px;
 }
 
-/* Summary cards (TACACS+ dashboard style) */
+/* Summary cards: same as the Oxidized Dashboard (title, 48px number,
+ * colored top edge, hover lift). */
 
 .networksyslog-stats {
     display: grid;
@@ -27,14 +28,28 @@
 }
 
 .networksyslog-stat {
+    display: block;
     box-sizing: border-box;
     min-width: 0;
     min-height: 110px;
     padding: 16px 14px;
     border: 1px solid #d9dce1;
+    border-top: 3px solid #9aa4ad;
     border-radius: 8px;
     background: #ffffff;
+    text-decoration: none;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
+
+.networksyslog-stat:hover {
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+}
+
+.networksyslog-stat-all { border-top-color: #0275b8; }
+.networksyslog-stat-syslog { border-top-color: #2f9e44; }
+.networksyslog-stat-events { border-top-color: #e67700; }
 
 .networksyslog-stat-title {
     font-size: 16px;
@@ -44,9 +59,10 @@
 }
 
 .networksyslog-stat-value {
-    font-size: 32px;
+    font-size: 48px;
     font-weight: 700;
     line-height: 1.2;
+    font-variant-numeric: tabular-nums;
 }
 
 @media (max-width: 600px) {

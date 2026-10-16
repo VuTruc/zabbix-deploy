@@ -439,24 +439,34 @@ foreach ($devices as $device) {
  * ============================================================
  */
 
+// Same cards as the Oxidized Dashboard: title, big number, colored top edge;
+// each card jumps to the device list.
 $summary_stats = (new CDiv())
     ->addClass('networksyslog-stats');
 
 foreach ([
-    _('Discovered devices') => $total_devices,
-    _('Devices with syslog') => $syslog_devices,
-    _('Devices with events') => $event_devices
-] as $stat_title => $stat_value) {
+    ['all', _('Discovered devices'), $total_devices],
+    ['syslog', _('Devices with syslog'), $syslog_devices],
+    ['events', _('Devices with events'), $event_devices]
+] as [$stat_kind, $stat_title, $stat_value]) {
     $summary_stats->addItem(
-        (new CDiv([
-            (new CDiv($stat_title))->addClass('networksyslog-stat-title'),
-            (new CDiv($stat_value))->addClass('networksyslog-stat-value')
-        ]))->addClass('networksyslog-stat')
+        (new CLink(
+            new CTag('div', true, [
+                (new CDiv($stat_title))->addClass('networksyslog-stat-title'),
+                (new CDiv((string) $stat_value))->addClass('networksyslog-stat-value')
+            ]),
+            '#networksyslog-devices'
+        ))
+            ->addClass('networksyslog-stat')
+            ->addClass('networksyslog-stat-'.$stat_kind)
     );
 }
 
 $html_page->addItem(
-    (new CDiv($summary_stats))
+    (new CDiv([
+        (new CTag('h2', true, _('Overview')))->addClass('networksyslog-section-title'),
+        $summary_stats
+    ]))
         ->addClass('networksyslog-section')
 );
 
@@ -550,7 +560,9 @@ $html_page->addItem(
             _('Network Syslog Devices')
         ))->addClass('networksyslog-section-title'),
         $table
-    ]))->addClass('networksyslog-section')
+    ]))
+        ->addClass('networksyslog-section')
+        ->setId('networksyslog-devices')
 );
 
 $html_page->show();
