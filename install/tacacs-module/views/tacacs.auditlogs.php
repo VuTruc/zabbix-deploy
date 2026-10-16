@@ -2,6 +2,8 @@
 
 $this->addCssFile('modules/Tacacs/assets/tacacs.css');
 
+require_once dirname(__DIR__).'/include/DateFormat.php';
+
 $filters = $data['filters'] ?? [];
 $baseUrl = (new CUrl('zabbix.php'))->setArgument('action', 'tacacs.auditlogs');
 
@@ -112,7 +114,8 @@ $htmlPage->addItem($filterForm);
 
 $table = new CTableInfo();
 $table->setHeader([
-    _('Time'), _('Device'), _('Username'), _('Source address'),
+    (new CColHeader(_('Time')))->addClass('tacacs-col-time'),
+    _('Device'), _('Username'), _('Source address'),
     _('Event'), _('Action'), _('Command'), _('Result'), _('Details')
 ]);
 foreach ($data['rows'] as $row) {
@@ -133,7 +136,7 @@ foreach ($data['rows'] as $row) {
         $command = '—';
     }
     $table->addRow([
-        (string) $row['event_time'],
+        (new CCol(\Modules\Tacacs\DateFormat::dateTime($row['event_time'])))->addClass('tacacs-col-time'),
         $deviceName,
         (string) ($row['username'] ?? '—'),
         (string) ($row['source_address'] ?? '—'),
