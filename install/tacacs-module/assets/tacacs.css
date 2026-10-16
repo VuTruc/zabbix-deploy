@@ -316,6 +316,14 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
+    gap: 4px;
+}
+
+.tacacs-audit-note p {
+    /* The browser's default <p> margin doesn't collapse inside a flex
+     * container, which was leaving the lines off-center; gap above
+     * handles the spacing between them instead. */
+    margin: 0;
 }
 .tacacs-audit-command {
     white-space: normal;
