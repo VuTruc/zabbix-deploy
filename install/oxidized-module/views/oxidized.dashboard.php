@@ -44,28 +44,27 @@ if (!$data['api_available']) {
 }
 
 /*
- * Summary cards, same layout as the TACACS+ Dashboard: each card links to
- * where the nodes behind the number are listed.
+ * Summary cards: title and number; each card links to where the nodes behind
+ * the number are listed.
  */
 $failed_anchor = '#oxidized-failed-nodes';
 
 $cards = [
-    ['all', _('Nodes'), $data['stats']['nodes'], _('View Nodes →'), $nodes_url],
-    ['ok', _('Backup OK'), $data['stats']['ok'], _('View Nodes →'), $nodes_url],
-    ['failed', _('Failed'), $data['stats']['failed'], _('View Failed →'), $failed_anchor],
-    ['never', _('Never'), $data['stats']['never'], _('View Nodes →'), $nodes_url],
-    ['due', _('Due in 24h'), $data['stats']['due'], _('View Schedule →'), $nodes_url]
+    ['all', _('Nodes'), $data['stats']['nodes'], $nodes_url],
+    ['ok', _('Backup OK'), $data['stats']['ok'], $nodes_url],
+    ['failed', _('Failed'), $data['stats']['failed'], $failed_anchor],
+    ['never', _('Never'), $data['stats']['never'], $nodes_url],
+    ['due', _('Due in 24h'), $data['stats']['due'], $nodes_url]
 ];
 
 $stats = (new CDiv())->addClass('oxidized-stats');
 
-foreach ($cards as [$kind, $label, $value, $link_text, $url]) {
+foreach ($cards as [$kind, $label, $value, $url]) {
     $stats->addItem(
         (new CLink(
             new CTag('div', true, [
                 (new CDiv($label))->addClass('oxidized-stat-title'),
-                (new CDiv((string) $value))->addClass('oxidized-stat-value'),
-                (new CDiv($link_text))->addClass('oxidized-stat-link')
+                (new CDiv((string) $value))->addClass('oxidized-stat-value')
             ]),
             $url
         ))
