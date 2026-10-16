@@ -752,7 +752,13 @@ $pagePasswordChangeGrid = (new CFormGrid())
 
 $pagePasswordChangeForm->addItem($pagePasswordChangeGrid);
 $pagePasswordChangeForm->addItem(
-    new CFormActions(new CSubmit('submit', _('Change page password')))
+    (new CFormActions(
+        new CSubmit('submit', _('Change page password')),
+        [
+            (new CButton('clear', _('Clear')))
+                ->onClick('this.form.reset();')
+        ]
+    ))->addClass('tacacs-form-buttons')
 );
 
 $html_page->addItem(
