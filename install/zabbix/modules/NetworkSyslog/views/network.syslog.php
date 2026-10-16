@@ -480,8 +480,9 @@ $html_page->addItem(
 $table = (new CTableInfo())
     ->setHeader([
         _('Device IP'),
-        _('Syslog'),
-        _('Events'),
+        // One button per column: header and button centered.
+        (new CColHeader(_('Syslog')))->addClass('networksyslog-col-center'),
+        (new CColHeader(_('Events')))->addClass('networksyslog-col-center'),
         _('Last Syslog'),
         _('Last Event')
     ]);
@@ -546,8 +547,8 @@ foreach ($devices as $device) {
      */
     $table->addRow([
         $ip,
-        $syslog_link,
-        $events_link,
+        (new CCol($syslog_link))->addClass('networksyslog-col-center'),
+        (new CCol($events_link))->addClass('networksyslog-col-center'),
         $last_syslog,
         $last_event
     ]);

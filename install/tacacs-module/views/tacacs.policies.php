@@ -108,15 +108,16 @@ $policy_form->addItem($policy_grid);
 $policy_form->addVar('save_policy', 1);
 
 $policy_form->addItem(
-	new CFormActions(
+	(new CFormActions(
 		new CSubmit(
 			'submit',
 			$edit_policy !== null ? _('Update') : _('Add')
 		),
-		$edit_policy !== null
-			? [new CButtonCancel('&action=tacacs.policies')]
-			: []
-	)
+		[
+			(new CButton('clear', _('Clear')))
+				->onClick('location.href = '.json_encode((new CUrl('zabbix.php'))->setArgument('action', 'tacacs.policies')->getUrl()).';')
+		]
+	))->addClass('tacacs-form-buttons')
 );
 
 
@@ -319,15 +320,16 @@ $rule_form->addItem($rule_grid);
 $rule_form->addVar('save_rule', 1);
 
 $rule_form->addItem(
-	new CFormActions(
+	(new CFormActions(
 		new CSubmit(
 			'submit',
 			$edit_rule !== null ? _('Update') : _('Add')
 		),
-		$edit_rule !== null
-			? [new CButtonCancel('&action=tacacs.policies')]
-			: []
-	)
+		[
+			(new CButton('clear', _('Clear')))
+				->onClick('location.href = '.json_encode((new CUrl('zabbix.php'))->setArgument('action', 'tacacs.policies')->getUrl()).';')
+		]
+	))->addClass('tacacs-form-buttons')
 );
 
 $html_page->addItem(

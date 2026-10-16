@@ -211,21 +211,18 @@ $form->addItem($device_form);
 $form->addVar('save', 1);
 
 $form->addItem(
-        new CFormActions(
+        (new CFormActions(
                 new CSubmit(
                         'submit',
                         $is_edit
                                 ? _('Update')
                                 : _('Add')
                 ),
-                $is_edit
-                        ? [
-                                new CButtonCancel(
-                                        '&action=tacacs.devices'
-                                )
-                        ]
-                        : []
-        )
+                [
+                        (new CButton('clear', _('Clear')))
+                                ->onClick('location.href = '.json_encode((new CUrl('zabbix.php'))->setArgument('action', 'tacacs.devices')->getUrl()).';')
+                ]
+        ))->addClass('tacacs-form-buttons')
 );
 
 $html_page = (new CHtmlPage())

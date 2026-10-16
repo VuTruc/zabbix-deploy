@@ -159,3 +159,22 @@ main :is(button, .btn, .btn-alt):not(.btn-icon):not(.btn-link):not(.btn-grey):no
     cursor: default;
 }
 /* END uniform module buttons v1 */
+
+/* Columns holding a single button: center the header and the button. */
+.list-table th.networksyslog-col-center,
+.list-table td.networksyslog-col-center {
+    text-align: center;
+}
+
+/* BEGIN centered button columns v1
+ * In a list whose last column holds buttons (Actions), center that column's
+ * header and its buttons. Tables without buttons are not affected. Kept
+ * identical in tacacs.css, oxidized.css and networksyslog.css. */
+main table.list-table:has(tbody td:last-child :is(.btn, button)) :is(th, td):last-child {
+    text-align: center;
+}
+
+main table.list-table:has(tbody td:last-child :is(.btn, button)) td:last-child > div {
+    justify-content: center;
+}
+/* END centered button columns v1 */

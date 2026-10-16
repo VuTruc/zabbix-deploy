@@ -68,21 +68,26 @@ if ($is_edit) {
 	$form->addVar('save', 1);
 
 	$form->addItem(
-		new CFormActions(
+		(new CFormActions(
 			new CSubmit('submit', _('Update')),
 			[
-				new CButtonCancel('&action=tacacs.users')
+				(new CButton('clear', _('Clear')))
+					->onClick('location.href = '.json_encode((new CUrl('zabbix.php'))->setArgument('action', 'tacacs.users')->getUrl()).';')
 			]
-		)
+		))->addClass('tacacs-form-buttons')
 	);
 }
 else {
 	$form->addVar('save', 1);
 
 	$form->addItem(
-		new CFormActions(
-			new CSubmit('submit', _('Add'))
-		)
+		(new CFormActions(
+			new CSubmit('submit', _('Add')),
+			[
+				(new CButton('clear', _('Clear')))
+					->onClick('location.href = '.json_encode((new CUrl('zabbix.php'))->setArgument('action', 'tacacs.users')->getUrl()).';')
+			]
+		))->addClass('tacacs-form-buttons')
 	);
 }
 

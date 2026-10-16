@@ -508,19 +508,24 @@ $form->addVar('assign', 1);
 if ($isEdit) {
     $form->addVar('edit_id', (int) $editAssignment['id']);
     $form->addItem(
-        new CFormActions(
+        (new CFormActions(
             new CSubmit('submit', _('Update')),
             [
-                (new CRedirectButton(_('Cancel'), $base_url->getUrl()))
+                (new CButton('clear', _('Clear')))
+                    ->onClick('location.href = '.json_encode($base_url->getUrl()).';')
             ]
-        )
+        ))->addClass('tacacs-form-buttons')
     );
 }
 else {
     $form->addItem(
-        new CFormActions(
-            new CSubmit('submit', _('Assign'))
-        )
+        (new CFormActions(
+            new CSubmit('submit', _('Assign')),
+            [
+                (new CButton('clear', _('Clear')))
+                    ->onClick('location.href = '.json_encode($base_url->getUrl()).';')
+            ]
+        ))->addClass('tacacs-form-buttons')
     );
 }
 

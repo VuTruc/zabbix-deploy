@@ -1997,3 +1997,21 @@ main .tacacs-apply-bar .tacacs-apply-manual-button {
 .tacacs-stats > .tacacs-stat:nth-child(3) { border-top-color: #7048e8; }
 .tacacs-stats > .tacacs-stat:nth-child(4) { border-top-color: #e67700; }
 .tacacs-stats > .tacacs-stat:nth-child(5) { border-top-color: #1098ad; }
+
+/* Add/Update/Assign and Clear sit centered under the form fields. */
+form > .form-actions.tacacs-form-buttons {
+    justify-content: center;
+}
+
+/* BEGIN centered button columns v1
+ * In a list whose last column holds buttons (Actions), center that column's
+ * header and its buttons. Tables without buttons are not affected. Kept
+ * identical in tacacs.css, oxidized.css and networksyslog.css. */
+main table.list-table:has(tbody td:last-child :is(.btn, button)) :is(th, td):last-child {
+    text-align: center;
+}
+
+main table.list-table:has(tbody td:last-child :is(.btn, button)) td:last-child > div {
+    justify-content: center;
+}
+/* END centered button columns v1 */

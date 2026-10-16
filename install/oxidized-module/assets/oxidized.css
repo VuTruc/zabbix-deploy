@@ -42,12 +42,14 @@
     margin-top: 16px;
 }
 
-/* Update/Add and Clear: same 8px gap as the row actions. */
+/* Update/Add and Clear: same 8px gap as the row actions, centered under
+ * the form fields. */
 .oxidized-form-actions {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
     align-items: center;
+    justify-content: center;
     list-style: none;
     padding: 0;
 }
@@ -322,3 +324,16 @@ main :is(button, .btn, .btn-alt):not(.btn-icon):not(.btn-link):not(.btn-grey):no
 @media (max-width: 900px) {
     .oxidized-compare-header { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* BEGIN centered button columns v1
+ * In a list whose last column holds buttons (Actions), center that column's
+ * header and its buttons. Tables without buttons are not affected. Kept
+ * identical in tacacs.css, oxidized.css and networksyslog.css. */
+main table.list-table:has(tbody td:last-child :is(.btn, button)) :is(th, td):last-child {
+    text-align: center;
+}
+
+main table.list-table:has(tbody td:last-child :is(.btn, button)) td:last-child > div {
+    justify-content: center;
+}
+/* END centered button columns v1 */
