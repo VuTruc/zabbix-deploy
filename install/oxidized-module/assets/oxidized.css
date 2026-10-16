@@ -52,6 +52,8 @@
     justify-content: center;
     list-style: none;
     padding: 0;
+    /* One blank line between the fields and the buttons. */
+    margin-top: 24px;
 }
 
 /* BEGIN uniform module buttons v1
