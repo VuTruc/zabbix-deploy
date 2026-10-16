@@ -52,8 +52,11 @@
     justify-content: center;
     list-style: none;
     padding: 0;
-    /* One blank line between the fields and the buttons. */
-    margin-top: 24px;
+    /* Same row-gap as .form-grid (blue-theme.css), so the button row
+     * sits exactly like one more field row — on both sides, so the
+     * nodes table right below doesn't touch the buttons. */
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 /* BEGIN uniform module buttons v1

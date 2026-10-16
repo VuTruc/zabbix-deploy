@@ -16,9 +16,20 @@
 }
 
 /* Audit Logs has 4 cards, not 5 — give them the full row instead of
- * leaving a trailing empty column sized for the Dashboard's 5th card. */
+ * leaving a trailing empty column sized for the Dashboard's 5th card.
+ * Sized and colored like the Syslog summary cards (.networksyslog-stat),
+ * not the taller Dashboard cards, since these aren't clickable links. */
 .tacacs-stats:has(> :nth-child(4):last-child) {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.tacacs-stats:has(> :nth-child(4):last-child) .tacacs-stat {
+    min-height: 110px;
+}
+
+.tacacs-stats:has(> :nth-child(4):last-child) .tacacs-stat-title,
+.tacacs-stats:has(> :nth-child(4):last-child) .tacacs-stat-value {
+    color: #0275b8;
 }
 
 .tacacs-dashboard .tacacs-stat {
@@ -294,7 +305,9 @@
 
 /* TACACS+ audit history */
 .tacacs-audit-note {
-    margin: 8px 0 14px;
+    /* Bottom margin matches .tacacs-stats' margin-bottom (30px) above it,
+     * so the note sits with equal space on both sides. */
+    margin: 0 0 30px;
     padding: 8px 12px;
     border-left: 3px solid #6f8195;
     background: rgba(127, 127, 127, 0.08);
@@ -2008,8 +2021,11 @@ main .tacacs-apply-bar .tacacs-apply-manual-button {
 form > .form-actions.tacacs-form-buttons {
     justify-content: center;
     /* Same row-gap as .form-grid (blue-theme.css), so the button row
-     * sits exactly like one more field row. */
+     * sits exactly like one more field row — on both sides, so content
+     * placed right after the form (e.g. the Audit Logs table) doesn't
+     * touch the buttons. */
     margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 /* The inputs sit in a 340px middle column, centered on the same axis as the
