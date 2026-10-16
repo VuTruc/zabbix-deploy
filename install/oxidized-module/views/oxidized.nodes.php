@@ -39,28 +39,7 @@ else {
     $node_interval_days = '1';
 }
 
-$node_models = [
-    'fortigate' => _('FortiGate'),
-    'fortios' => _('Fortinet FortiOS (FortiManager/FortiAnalyzer)'),
-    'ios' => _('Cisco IOS/IOS-XE'),
-    'iosxr' => _('Cisco IOS-XR'),
-    'nxos' => _('Cisco NX-OS'),
-    'ciscosmb' => _('Cisco SMB'),
-    'asa' => _('Cisco ASA'),
-    'aireos' => _('Cisco AireOS (WLC)'),
-    'junos' => _('Juniper Junos'),
-    'panos' => _('Palo Alto PAN-OS'),
-    'gaiaos' => _('Check Point Gaia'),
-    'sonicos' => _('SonicWall SonicOS'),
-    'aoscx' => _('Aruba AOS-CX'),
-    'procurve' => _('HP ProCurve'),
-    'comware' => _('HP/H3C Comware'),
-    'h3c' => _('H3C'),
-    'vrp' => _('Huawei VRP'),
-    'eos' => _('Arista EOS'),
-    'routeros' => _('MikroTik RouterOS'),
-    'os10' => _('Dell OS10')
-];
+$node_models = \Modules\Oxidized\OxidizedApi::modelLabels();
 
 // Keep a model saved outside the list selectable so editing does not change it.
 if ($node_model !== '' && !array_key_exists($node_model, $node_models)) {

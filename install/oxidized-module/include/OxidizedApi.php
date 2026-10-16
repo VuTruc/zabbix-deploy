@@ -55,6 +55,32 @@ class OxidizedApi {
         return $nodes;
     }
 
+    /** Oxidized model key => display name, shared by the Nodes form/list and the Dashboard. */
+    public static function modelLabels(): array {
+        return [
+            'fortigate' => _('FortiGate'),
+            'fortios' => _('Fortinet FortiOS (FortiManager/FortiAnalyzer)'),
+            'ios' => _('Cisco IOS/IOS-XE'),
+            'iosxr' => _('Cisco IOS-XR'),
+            'nxos' => _('Cisco NX-OS'),
+            'ciscosmb' => _('Cisco SMB'),
+            'asa' => _('Cisco ASA'),
+            'aireos' => _('Cisco AireOS (WLC)'),
+            'junos' => _('Juniper Junos'),
+            'panos' => _('Palo Alto PAN-OS'),
+            'gaiaos' => _('Check Point Gaia'),
+            'sonicos' => _('SonicWall SonicOS'),
+            'aoscx' => _('Aruba AOS-CX'),
+            'procurve' => _('HP ProCurve'),
+            'comware' => _('HP/H3C Comware'),
+            'h3c' => _('H3C'),
+            'vrp' => _('Huawei VRP'),
+            'eos' => _('Arista EOS'),
+            'routeros' => _('MikroTik RouterOS'),
+            'os10' => _('Dell OS10')
+        ];
+    }
+
     public static function isBootstrap(array $node): bool {
         return $node['name'] === self::BOOTSTRAP_NAME && $node['ip'] === self::BOOTSTRAP_IP;
     }

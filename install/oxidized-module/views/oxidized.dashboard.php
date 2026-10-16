@@ -94,10 +94,12 @@ $runs_table = (new CTableInfo())
     ])
     ->setNoDataMessage(_('No nodes yet. Add one on the Nodes page.'));
 
+$model_labels = \Modules\Oxidized\OxidizedApi::modelLabels();
+
 foreach ($data['rows'] as $row) {
     $runs_table->addRow([
         (new CLink($row['name'], $config_url($row['name']))),
-        $row['model'],
+        $model_labels[$row['model']] ?? $row['model'],
         $row['ip'],
         $format_time($row['time']),
         $status_pill($row),
