@@ -353,16 +353,31 @@ main table.list-table:has(tbody td:last-child :is(.btn, button)) td:last-child >
     display: contents;
 }
 
+/* Labels hug the inputs: right edge of the label column, vertically centered
+ * on the input (the legacy table cell's own width/alignment is overridden). */
 .oxidized-node-form-section .table-forms .table-forms-td-left {
-    display: block;
+    display: flex;
     grid-column: 1;
+    align-items: center;
+    justify-content: flex-end;
+    width: auto;
+    padding-right: 0;
     text-align: right;
 }
 
+.oxidized-node-form-section .table-forms .table-forms-td-left label {
+    position: relative;
+    margin: 0;
+    text-align: right;
+}
+
+/* The theme sizes these legacy cells 15% / 85%; let the grid size them. */
 .oxidized-node-form-section .table-forms .table-forms-td-right {
     display: block;
     grid-column: 2;
     min-width: 0;
+    width: auto;
+    padding-left: 0;
 }
 
 .oxidized-node-form-section .table-forms .table-forms-td-right :is(input[type="text"], input[type="password"], textarea, z-select) {
